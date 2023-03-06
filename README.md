@@ -1,0 +1,2 @@
+# OFAStyleIC_Modelscope
+对Modelscope中OFA image caption的一系列组件进行适当修改，使得任务包含风格属性
