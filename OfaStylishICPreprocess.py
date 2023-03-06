@@ -34,7 +34,7 @@ class OfaStylishICProcessor(OfaICP):
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " write a '{}' description of the image")
-        # inputs=new_prompt.format(data["personality"])
+        inputs=new_prompt.format(data["personality"])
         # update the dict with our new prompt
         sample.update("source", self.tokenize_text(inputs))
         return sample
