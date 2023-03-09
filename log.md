@@ -1,5 +1,6 @@
 ## Problem log
 
+> 2022-03-06
 ### 1. prompt所在的位置
 
 ```
@@ -11,7 +12,7 @@
 
 该函数返回值为
 ```python
-{"input": 图像特征,
+{"input": tokenized instructions,
  "patch_img": 图像特征,
  "mask": 遮罩,
  "label": caption tokenized
@@ -22,8 +23,10 @@
 - build一个OFAICPreprocessor的子类
 > 根据pipeline提示, 在此基础上需要对OfaPreprocessor稍加修改
 > 具体需要将其中的self.preprocess定死为OFAICPreprocessor
-- 重写该方法修改prompt为"Describe the image in style <>", 加special token
+- 重写该方法修改prompt为"what does the image describe? write a {} reply.", 加special token
 > *personality个数及插入方式?*
-- 
 
-### 2. finetune时是否加入其他loss做目标
+
+> 2022-03-09
+基于OfaPreprocessor实现OfaPreprocessorforStylishIC, 调用OfaStyleICP对数据集预处理
+
