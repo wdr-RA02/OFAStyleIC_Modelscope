@@ -1,0 +1,7 @@
+.vscode/
+__pycache__/
+**/__pycache__/
+
+/trainer_config.json
+workspace/
+work_dir/
