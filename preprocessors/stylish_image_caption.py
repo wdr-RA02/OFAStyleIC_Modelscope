@@ -1,3 +1,4 @@
+from datasets.formatting.formatting import LazyDict
 # import torch
 from modelscope.preprocessors.multi_modal import OfaPreprocessor as OfaPre
 from modelscope.preprocessors.ofa import OfaImageCaptioningPreprocessor as OfaICP
@@ -11,13 +12,11 @@ import re
 
 # 按照modelscope的要求注册preprocessor
 @PREPROCESSORS.register_module(
-    Fields.multi_modal, module_name="ofa-stylish-caption-preprocessor"
-)                                       
+    Fields.multi_modal, module_name="ofa-stylish-ic-preprocessor")                                       
 class OfaPreprocessorforStylishIC(OfaPre):
     def __init__(self, 
             model_dir: str, 
             mode=ModeKeys.INFERENCE, 
-            style_key="style",
             *args, **kwargs):
         '''
         OfaPreprocessorforStylishIC: 在Modelscope提供的OFAPreprocessor基础上加入
@@ -28,25 +27,25 @@ class OfaPreprocessorforStylishIC(OfaPre):
         dataset_file_attr: 指定图片后缀(必须带点)
         '''
         super().__init__(model_dir, mode, *args, **kwargs)
-        self.__dataset_dir=kwargs.get("dataset_dir",None)
-        self.__file_attr=kwargs.get("dataset_file_attr",".jpg")
 
         # 在OFAPreprocessor的基础上修改data preprocessor, key和tokenizer
         self.preprocess = OfaStylishICPreprocessor(cfg=self.cfg, 
                     model_dir=model_dir, 
-                    mode=mode, 
-                    style_key=style_key,
-                    dataset_dir=self.__dataset_dir,
-                    dataset_file_attr=self.__file_attr)
+                    mode=mode)
         # 指定style标签的key
-        self.STYLE_KEY = style_key
+        # self.STYLE_KEY = style_key
         self.tokenizer=self.preprocess.tokenizer
         # add "style" key to self.keys
-        self.keys.append(self.STYLE_KEY)
+        # self.keys.append(self.STYLE_KEY)
+        print(f"OFAPpSIC registered, model_dir:{model_dir}")
+
 
     def __call__(self, 
             input: Union[str, tuple, Dict[str, Any]], *args, **kwargs) -> Dict[str, Any]:
-        print(self.cfg.model.get("prompt", "not defined, use default prompt"))
+        # print(self.cfg.model.get("prompt", "not defined, use default prompt"))
+        # 对于hf datasets的map函数, 要特别处理一下input
+        if isinstance(input, LazyDict):
+            input=dict(input)
         # 暂时先不修改父类的call函数
         return super().__call__(input, *args, **kwargs)
     
@@ -58,7 +57,6 @@ class OfaStylishICPreprocessor(OfaICP):
     def __init__(self,
                 cfg, 
                 model_dir,
-                style_key="style",
                 mode=ModeKeys.INFERENCE, 
                 *args, 
                 **kwargs):
@@ -71,10 +69,8 @@ class OfaStylishICPreprocessor(OfaICP):
         '''
         super().__init__(cfg, model_dir, mode, *args, **kwargs)
         self.style_dict = dict()
-        # 用于指定dataset dir
-        self.__dataset_dir=kwargs.get("dataset_dir",None)
-        self.__file_attr=kwargs.get("dataset_file_attr",".jpg")
-        self.STYLE_KEY = style_key
+
+        self.STYLE_KEY=cfg.dataset.get("style_key", "style")
 
     def add_style_token(self, style_list: List):
         '''
@@ -82,19 +78,9 @@ class OfaStylishICPreprocessor(OfaICP):
         '''
         raise NotImplementedError("尚未考虑添加style token的问题")
 
-    def set_dataset_dir(self, dir:str, attr:str=".jpg"):
-        '''
-        用于指定本地数据集的位置, 用于拼接image_hash
-
-        args: dir: 数据集位置(可以是本地地址, 也可以是网络地址)
-        attr: 文件后缀名, 默认为.jpg
-        '''
-        self.__dataset_dir = dir
-        self.__file_attr = attr
-
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:
-
+        
         assert self.STYLE_KEY in data
         return super().__call__(data)
 
@@ -108,15 +94,6 @@ class OfaStylishICPreprocessor(OfaICP):
         如果只输入image_hash, 那么必须通过set_dataset_dir指定数据集目录和文件后缀
         return 与父类的该函数一样返回字典,包含source, image, mask and label data.
         '''
-        if "image_hash" in data:
-            assert self.__dataset_dir != None
-    
-            image_path=os.path.join(self.__dataset_dir,data["image_hash"]+self.__file_attr)
-            if re.findall(re.compile("^(http|https|ftp|smb)://.*$"),image_path)==[]:  
-                # 对网页路径采取不同的处理方式 
-                image_path.replace("\\","/")
-            data["image"]=image_path
-        print(data["image"])
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
@@ -124,4 +101,24 @@ class OfaStylishICPreprocessor(OfaICP):
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
         return sample
+    
+def collate_pcaption_dataset(data, dataset_dir: str, file_attr: str=".jpg"):
+    '''
+    将["image_hash", "text", style_key]的原始数据集转换为["image", "text", style_key]的新数据集
+    原则是尽量少在preprocessor那里加参数
+
+    args: data 原始数据集, dict
+    dataset_dir: 数据集地址
+    file_attr: 以点开头的后缀
+
+    return: 新数据集
+    '''
+
+    image_path=os.path.join(dataset_dir,data["image"]+file_attr)
+    if re.findall(re.compile("^(http|https|ftp|smb)://.*$"),image_path)==[]:  
+        # 对网页路径采取不同的处理方式 
+        image_path.replace("\\","/")
+    data["image"]=image_path
+
+    return data
 
