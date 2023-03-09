@@ -38,11 +38,15 @@ dataset remapping:
 ```
 
 遇到了很艹蛋的问题: trainer没法指定使用我的preprocessor!
+
 modelscope官网给的解决方案是dataset转成huggingface那套然后再map
+
 可是这样很占内存啊, 而且`build_trainer`之后他还是照例给我指派了preprocessor....
 
 ~~鉴定为不得不重写OFATrainer~~
+
 鉴定为得在trainer里面指定preprocessor
+
 电脑太烂显存只有4g 明天再试吧
 
 
