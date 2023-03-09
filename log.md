@@ -30,3 +30,10 @@
 > 2022-03-09
 基于OfaPreprocessor实现OfaPreprocessorforStylishIC, 调用OfaStyleICP对数据集预处理
 
+dataset remapping:
+```python
+{"personality":"style",
+"comment":"text",
+"image_hash":"image_hash"}
+```
+
