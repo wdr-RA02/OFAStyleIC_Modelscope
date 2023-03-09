@@ -75,7 +75,7 @@ class OfaStylishICPreprocessor(OfaICP):
                 data: Dict[str, Any]) -> Dict[str, Any]:
         r'''
         args: data 以字典形式输入的数据, 最少包含 `image`, `prompt`, `label`
-        三个主键, 风格暂f "style"主键插入
+        三个主键, 风格暂时以"style"主键插入
 
         return 与父类的该函数一样返回包字典,包含source, image, mask and label data.
         '''
