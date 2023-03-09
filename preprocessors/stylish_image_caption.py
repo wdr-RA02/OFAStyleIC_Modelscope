@@ -41,8 +41,7 @@ class OfaPreprocessorforStylishIC(OfaPre):
         print(self.cfg.model.get("prompt", "not defined, use default prompt"))
         # 暂时先不修改父类的call函数
         return super().__call__(input, *args, **kwargs)
-
-
+    
 class OfaStylishICPreprocessor(OfaICP):
     '''
     OfaStylishICPreprocessor: 在Modelscope提供的OFAICPreprocessor基础上加入
@@ -86,5 +85,5 @@ class OfaStylishICPreprocessor(OfaICP):
         inputs=new_prompt.format(data[self.STYLE_KEY])
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
-        sample.update(self.STYLE_KEY, data[self.STYLE_KEY])
         return sample
+
