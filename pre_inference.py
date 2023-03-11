@@ -6,7 +6,8 @@ from modelscope.utils.constant import Tasks
 from modelscope.outputs import OutputKeys
 
 from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
-
+from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
+from utils.train_conf import *
 
 def get_batch_addr(base_addr:str, hashes: dict):
     batch_data=list()
@@ -19,15 +20,20 @@ def get_batch_addr(base_addr:str, hashes: dict):
     return batch_data
 
 if __name__ == "__main__":
-    model_name="damo/ofa_image-caption_coco_distilled_en"
-    model_dir = snapshot_download(model_name)
+    train_conf=load_train_conf("trainer_config.json")
+    assert isinstance(train_conf, dict)
+
+    # model_name="damo/ofa_image-caption_coco_distilled_en"
+    # model_dir = snapshot_download(model_name)
     # img = "https://shuangqing-public.oss-cn-zhangjiakou.aliyuncs.com/donuts.jpg"
 
-    addr="xxx"
+    addr=train_conf["img_addr"]
+    model_name=train_conf["model_name"]
+    # model_dir = snapshot_download(model_name)
+    model_dir="workspace"
 
     # define preprocessor and model
     preprocessor=OfaPreprocessorforStylishIC(model_dir=model_dir)
-    #preprocessor=OfaPreprocessor(model_dir=model_dir)
     model=OfaForAllTasks.from_pretrained(model_dir)
 
     batches={
@@ -38,7 +44,7 @@ if __name__ == "__main__":
         "29697d81476d0307376e7466f6ad48":"Casual"
     }
     stylish_ic=pipeline(Tasks.image_captioning, 
-                        model=model_name, 
+                        model=model, 
                         preprocessor=preprocessor)
     
     data=get_batch_addr(addr,batches)
