@@ -5,10 +5,7 @@ from modelscope.preprocessors.ofa import OfaImageCaptioningPreprocessor as OfaIC
 from modelscope.utils.constant import ModeKeys
 from typing import Any, Dict, List, Union
 from modelscope.preprocessors.builder import PREPROCESSORS
-from modelscope.utils.constant import (Fields, Invoke, ModeKeys, ModelFile,
-                                       Tasks)
-import os
-import re
+from modelscope.utils.constant import (Fields, ModeKeys)
 
 # 按照modelscope的要求注册preprocessor
 @PREPROCESSORS.register_module(
@@ -71,13 +68,6 @@ class OfaStylishICPreprocessor(OfaICP):
         self.style_dict = dict()
 
         self.STYLE_KEY=cfg.dataset.get("style_key", "style")
-
-    def add_style_token(self, style_list: List):
-        '''
-        需要的时候调用此函f "style_captions的风格逐一添加到self.tokenizer里面
-        '''
-        self.style_dict = {style:i for i, style in enumerate(style_list)}
-        # raise NotImplementedError("尚未考虑添加style token的问题")
 
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:

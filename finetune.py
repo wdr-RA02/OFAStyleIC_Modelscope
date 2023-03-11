@@ -79,8 +79,16 @@ def train():
     trainer.train()
 
 
+
 if __name__=="__main__":
     # load args from config file
+    style_list=list_styles("personality.txt")
+    style_dict=add_style_token(style_list)
+    print(style_dict)
 
-    style_list=tokenize_styles("personality.txt")
-    print(style_list)
+    work_dir="workspace"
+
+    # train()
+
+
+    
