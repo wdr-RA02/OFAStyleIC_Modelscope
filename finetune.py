@@ -22,7 +22,6 @@ def generate_msdataset(ds_path: str, json_name: str):
     })
     return ds
 
-
 def cfg_modify_fn(cfg):
     cfg.train.hooks = [{
         'type': 'CheckpointHook',
