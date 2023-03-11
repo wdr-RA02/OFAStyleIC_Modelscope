@@ -76,7 +76,8 @@ class OfaStylishICPreprocessor(OfaICP):
         '''
         需要的时候调用此函f "style_captions的风格逐一添加到self.tokenizer里面
         '''
-        raise NotImplementedError("尚未考虑添加style token的问题")
+        self.style_dict = {style:i for i, style in enumerate(style_list)}
+        # raise NotImplementedError("尚未考虑添加style token的问题")
 
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:
@@ -102,23 +103,4 @@ class OfaStylishICPreprocessor(OfaICP):
         sample["source"]=self.tokenize_text(inputs)
         return sample
     
-def collate_pcaption_dataset(data, dataset_dir: str, file_attr: str=".jpg"):
-    '''
-    将["image_hash", "text", style_key]的原始数据集转换为["image", "text", style_key]的新数据集
-    原则是尽量少在preprocessor那里加参数
-
-    args: data 原始数据集, dict
-    dataset_dir: 数据集地址
-    file_attr: 以点开头的后缀
-
-    return: 新数据集
-    '''
-
-    image_path=os.path.join(dataset_dir,data["image"]+file_attr)
-    if re.findall(re.compile("^(http|https|ftp|smb)://.*$"),image_path)==[]:  
-        # 对网页路径采取不同的处理方式 
-        image_path.replace("\\","/")
-    data["image"]=image_path
-
-    return data
 
