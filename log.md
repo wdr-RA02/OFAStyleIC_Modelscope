@@ -50,3 +50,12 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 电脑太烂显存只有4g 明天再试吧
 
 
+> 2022-03-11
+
+昨天好歹是成功让服务器admin升级了一下驱动, 不然没法装modelscope...
+
+虽然但是, 有点想写一个基于hf的fallback了. 毕竟说不好我就有可能得用另一台服务器, 那个只能装1.7的pytorch...
+
+环境, 环境还是环境!!!
+
+可以考虑一下开个分支搞一下tokenizer了
