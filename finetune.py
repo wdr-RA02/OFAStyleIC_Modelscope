@@ -14,7 +14,9 @@ from utils.train_conf import *
 def cfg_modify_fn(cfg):
     cfg.train.hooks = [{
         'type': 'CheckpointHook',
-        'interval': 2
+        'by_epoch': False,
+        'interval': 5000,
+        'max_checkpoint_num': 3
     }, {
         'type': 'TextLoggerHook',
         'interval': 1
