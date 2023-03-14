@@ -26,7 +26,7 @@ def cfg_modify_fn(cfg):
     }, {
         'type': 'IterTimerHook'
     }]
-    cfg.train.max_epochs=5
+    cfg.train.max_epochs=3
     return cfg
 
 def preprocess_dataset(train_conf: dict,
@@ -55,6 +55,36 @@ def preprocess_dataset(train_conf: dict,
 
     return train_ds, eval_ds
 
+def generate_preprocessors(train_conf: dict,
+                           work_dir: str,
+                           tokenized: bool = False):
+    preprocessor = {
+        ConfigKeys.train:
+            OfaPreprocessorforStylishIC(
+                model_dir=work_dir,
+                mode=ModeKeys.TRAIN, 
+                no_collate=True),
+        ConfigKeys.val:
+            OfaPreprocessorforStylishIC(
+                model_dir=work_dir, 
+                mode=ModeKeys.EVAL, 
+                no_collate=True),
+    }
+
+    if tokenized:
+        # load style_dict
+        # raise NotImplementedError("该部分尚未完工")
+        style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
+        style_dict=add_style_token(style_list)
+
+        print(style_dict)
+        # add style token to tokenizers
+        preprocessor[ConfigKeys.train].preprocess.add_style_token(style_dict)
+        preprocessor[ConfigKeys.val].preprocess.add_style_token(style_dict)
+
+    return preprocessor
+
+
 def train(train_conf: dict, 
           train_ds,
           eval_ds,
@@ -62,7 +92,7 @@ def train(train_conf: dict,
           work_dir: str="work_dir"):
 
     model_name=train_conf["model_name"]
-    model_dir = snapshot_download(model_name)
+    # model_dir = snapshot_download(model_name)
     # model_dir="workspace"
     # set dataset addr
     args = dict(
@@ -78,20 +108,10 @@ def train(train_conf: dict,
     # 为保安全加上这条assert
     assert type(trainer)==OFATrainer
     work_dir = args.get("work_dir", "workspace")
-    preprocessor = {
-        ConfigKeys.train:
-            OfaPreprocessorforStylishIC(
-                model_dir=work_dir,
-                mode=ModeKeys.TRAIN, 
-                no_collate=True),
-        ConfigKeys.val:
-            OfaPreprocessorforStylishIC(
-                model_dir=work_dir, 
-                mode=ModeKeys.EVAL, 
-                no_collate=True),
-    }
 
-    trainer.preprocessor = preprocessor
+    trainer.preprocessor = generate_preprocessors(train_conf,
+                                                  work_dir=work_dir,
+                                                  tokenized=True)
     if ckpt is None:
         print("No checkpoint, train from scratch.")
         trainer.train()
@@ -112,28 +132,17 @@ def evaluate(train_conf: dict,
         eval_dataset=eval_ds,
         cfg_modify_fn=cfg_modify_fn,
     )
-    preprocessor = {
-        ConfigKeys.train:
-            OfaPreprocessorforStylishIC(
-                model_dir=model_dir,
-                mode=ModeKeys.TRAIN, 
-                no_collate=True),
-        ConfigKeys.val:
-            OfaPreprocessorforStylishIC(
-                model_dir=model_dir, 
-                mode=ModeKeys.EVAL, 
-                no_collate=True),
-    }
 
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
-    trainer.preprocessor=preprocessor
+    trainer.preprocessor=generate_preprocessors(train_conf,
+                                                work_dir=work_dir,
+                                                tokenized=True)
     print(trainer.evaluate())
 
 if __name__=="__main__":
-    parser=argparse.ArgumentParser(description="OFA Style finetune")
+    parser=argparse.ArgumentParser(description="OFA Style finetune tokenized")
     parser.add_argument("mode", help="select mode", choices=["train", "eval"])
     parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
-    parser.add_argument("--work_dir", help="specify work dir", type=str, default="work_dir")
     parser.add_argument("--checkpoint", help="checkpoint", type=str)
     args=parser.parse_args()
 
@@ -141,7 +150,7 @@ if __name__=="__main__":
     train_conf=load_train_conf(args.trainer_conf)
     assert isinstance(train_conf, dict)
 
-    work_dir=args.work_dir
+    work_dir=train_conf["work_dir"]
     ckpt=args.checkpoint
     print("work_dir is: "+work_dir)
 

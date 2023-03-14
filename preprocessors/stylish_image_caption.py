@@ -30,10 +30,11 @@ class OfaPreprocessorforStylishIC(OfaPre):
                     model_dir=model_dir, 
                     mode=mode)
         # 指定style标签的key
-        # self.STYLE_KEY = style_key
+        self.STYLE_KEY = "style"
+        self.tokenize_style=self.preprocess.tokenize_style
         self.tokenizer=self.preprocess.tokenizer
         # add "style" key to self.keys
-        # self.keys.append(self.STYLE_KEY)
+        self.keys.append(self.STYLE_KEY)
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
 
 
@@ -65,15 +66,26 @@ class OfaStylishICPreprocessor(OfaICP):
         dataset_file_attr: 指定图片后缀(必须带点)
         '''
         super().__init__(cfg, model_dir, mode, *args, **kwargs)
-        self.style_dict = dict()
+        # style tokenizer
+        self.style_dict = None
+        self.tokenize_style = False
 
-        self.STYLE_KEY=cfg.dataset.get("style_key", "style")
+        self.STYLE_KEY="style"
 
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:
         
         assert self.STYLE_KEY in data
+        
         return super().__call__(data)
+    
+    def add_style_token(self, style_dict: Dict[str, str]):
+        self.style_dict = style_dict
+        # Format: {style: "<style_k>"}
+        print("Got style dict, len={}".format(len(style_dict)))
+        self.tokenizer.add_tokens(list(self.style_dict.items()))
+        # open the token mode
+        self.tokenize_style = isinstance(self.style_dict, dict)
 
     def _build_infer_sample(
                 self, 
@@ -88,7 +100,11 @@ class OfaStylishICPreprocessor(OfaICP):
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
-        inputs=new_prompt.format(data[self.STYLE_KEY])
+
+        # get current style
+        cur_style=self.style_dict[data[self.STYLE_KEY]] if self.tokenize_style \
+                  else data[self.STYLE_KEY]
+        inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
         return sample
