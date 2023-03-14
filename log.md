@@ -1,14 +1,14 @@
 ## Problem log
 
-> Notes:
+### Notes:
 1. 一些缩写:
 - OFAS(Style)ICP: OFAStylishICPreprocessor
 - OFAPpSIC: OFAPreprocessorForStylishIC, 包含前者
 - 
 
 
-> 2023-03-06
-### 1. prompt所在的位置
+#### 2023-03-06
+1. prompt所在的位置
 
 ```
 |-OFAICPreprocessor(..., cfg, ...)
@@ -34,7 +34,7 @@
 > *personality个数及插入方式?*
 
 
-> 2023-03-09
+#### 2023-03-09
 基于OfaPreprocessor实现OfaPreprocessorforStylishIC, 调用OfaStyleICP对数据集预处理
 
 dataset remapping:
@@ -57,7 +57,7 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 电脑太烂显存只有4g 明天再试吧
 
 
-> 2023-03-11
+#### 2023-03-11
 
 1. 昨天好歹是成功让服务器admin升级了一下驱动, 不然没法装modelscope...
 
@@ -77,13 +77,13 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 
 4. 实在不行用base的pretrain ckpt弄吧
 
-> 2023-03-12
+#### 2023-03-12
 
 太幽默了, 写了一早上处理数据集的函数 结果好不容易处理好了服务器cuda倒先崩了啊哈哈哈哈
 
 加checkpoint教程: https://modelscope.cn/docs/Configuration%E8%AF%A6%E8%A7%A3
 
-> 2023-03-13
+#### 2023-03-13
 
 这两天代码量比较少, 主要跑训练去了
 
@@ -101,7 +101,7 @@ cfg.train.hooks=[{
 
 最后会保存在work_dir文件夹下
 
-> 2023-03-14
+#### 2023-03-14
 1. 在func/tokenized_style分支里面添加了利用tokenized_style训练的函数
 
 具体包括:
@@ -137,4 +137,5 @@ cfg.train.hooks=[{
 ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 
 - 调查prompt的作用
+
 - 调个base的模型试一下

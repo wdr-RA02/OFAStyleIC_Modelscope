@@ -23,6 +23,7 @@
 
 ## How to train?
 python3 finetune.py train (--trainer_conf path/to/conf.json)
+
 然后坐等训完捏
 
 基本上我用1080ti finetune一个OFA_tiny 2epoch都要12h....
