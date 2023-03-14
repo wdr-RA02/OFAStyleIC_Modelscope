@@ -1,5 +1,12 @@
 ## Problem log
 
+> Notes:
+1. 一些缩写:
+- OFAS(Style)ICP: OFAStylishICPreprocessor
+- OFAPpSIC: OFAPreprocessorForStylishIC, 包含前者
+- 
+
+
 > 2023-03-06
 ### 1. prompt所在的位置
 
@@ -93,3 +100,41 @@ cfg.train.hooks=[{
 ```
 
 最后会保存在work_dir文件夹下
+
+> 2023-03-14
+1. 在func/tokenized_style分支里面添加了利用tokenized_style训练的函数
+
+具体包括:
+```python
+|-preprocessors
+|--sic.py
+|---OFAPpSIC
+|----tokenize_style: bool, 指示是否使用tokenize training 
+|---OFASICP
+|----tokenize_style: bool, 指示是否使用tokenize training 
+|----add_style_token(self, style_dict)->None 将生成的style字典添加进preprocessor
+|----_build_infer_sample(...)->dict: 进行了有关prompt的修改
+|
+|-utils
+|--list_styles(ds_path, style_f_n)->list: 从personalities.txt文件中读取style并返回列表
+|--get_style_dict(style_list)->Dict[str, str]: 接受上述的list进行enumerate, 返回格式为{_STYLE: "<style_k>"}
+|
+|-finetune.py
+|--generate_preprocessors(train_conf, work_dir, tokenized: bool)->Dict[str, OFAPpSIC]: 生成preprocessor, 基于是否tokenizer的情况进行分别处理
+|--__main__
+|--args:{--trainer_conf:train_conf.json位置,
+         --checkpoint: 是否加载checkpoint
+         mode: [train|eval]: 训练格式}
+
+```
+
+感觉origin_style分支可以就此落幕了
+
+2. TODO: 
+- **添加metric**
+按照baseline的配置的话, 最起码包括B1/B4/rouge/CIDEr/spice
+
+ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
+
+- 调查prompt的作用
+- 调个base的模型试一下

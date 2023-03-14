@@ -13,7 +13,6 @@ from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from utils.train_conf import *
 
 
-
 def cfg_modify_fn(cfg):
     cfg.train.hooks = [{
         'type': 'CheckpointHook',
@@ -75,7 +74,7 @@ def generate_preprocessors(train_conf: dict,
         # load style_dict
         # raise NotImplementedError("该部分尚未完工")
         style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
-        style_dict=add_style_token(style_list)
+        style_dict=get_style_dict(style_list)
 
         print(style_dict)
         # add style token to tokenizers

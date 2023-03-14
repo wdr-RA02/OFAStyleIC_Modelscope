@@ -32,7 +32,7 @@ def list_styles(dataset_path: str,
     
     return style_list
 
-def add_style_token(style_list: list):
+def get_style_dict(style_list: list):
     '''
     需要的时候调用此函数将personality_captions的风格逐一添加到self.tokenizer里面
     '''
