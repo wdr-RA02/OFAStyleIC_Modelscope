@@ -117,7 +117,7 @@ def evaluate(train_conf: dict,
                 no_collate=True),
     }
     trainer.preprocessor = preprocessor
-    trainer.evaluate()
+    print(trainer.evaluate())
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style finetune")
