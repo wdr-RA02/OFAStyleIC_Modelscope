@@ -5,3 +5,5 @@ __pycache__/
 /trainer_config.json
 workspace/
 work_dir/
+
+conf/

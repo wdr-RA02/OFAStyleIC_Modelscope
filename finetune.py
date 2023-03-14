@@ -26,7 +26,7 @@ def cfg_modify_fn(cfg):
     }, {
         'type': 'IterTimerHook'
     }]
-    cfg.train.max_epochs=5
+    cfg.train.max_epochs=3
     return cfg
 
 def preprocess_dataset(train_conf: dict,
@@ -62,7 +62,7 @@ def train(train_conf: dict,
           work_dir: str="work_dir"):
 
     model_name=train_conf["model_name"]
-    model_dir = snapshot_download(model_name)
+    # model_dir = snapshot_download(model_name)
     # model_dir="workspace"
     # set dataset addr
     args = dict(
@@ -133,7 +133,6 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style finetune")
     parser.add_argument("mode", help="select mode", choices=["train", "eval"])
     parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
-    parser.add_argument("--work_dir", help="specify work dir", type=str, default="work_dir")
     parser.add_argument("--checkpoint", help="checkpoint", type=str)
     args=parser.parse_args()
 
@@ -141,7 +140,7 @@ if __name__=="__main__":
     train_conf=load_train_conf(args.trainer_conf)
     assert isinstance(train_conf, dict)
 
-    work_dir=args.work_dir
+    work_dir=train_conf["work_dir"]
     ckpt=args.checkpoint
     print("work_dir is: "+work_dir)
 
