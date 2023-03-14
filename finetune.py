@@ -75,7 +75,6 @@ def train(train_conf: dict,
 
     # 为保安全加上这条assert
     assert type(trainer)==OFATrainer
-    work_dir = args.get("work_dir", "workspace")
     preprocessor = {
         ConfigKeys.train:
             OfaPreprocessorforStylishIC(
@@ -100,14 +99,25 @@ def evaluate(train_conf: dict,
     args = dict(
         model=model_dir, 
         model_revision=train_conf["model_revision"],
+        train_dataset=eval_ds,
         eval_dataset=eval_ds,
         cfg_modify_fn=cfg_modify_fn,
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
+    preprocessor = {
+        ConfigKeys.train:
+            OfaPreprocessorforStylishIC(
+                model_dir=work_dir,
+                mode=ModeKeys.TRAIN, 
+                no_collate=True),
+        ConfigKeys.val:
+            OfaPreprocessorforStylishIC(
+                model_dir=work_dir, 
+                mode=ModeKeys.EVAL, 
+                no_collate=True),
+    }
+    trainer.preprocessor = preprocessor
     trainer.evaluate()
-
-
-
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style finetune")
