@@ -136,7 +136,7 @@ if __name__=="__main__":
             train_ds=train_ds, 
             eval_ds=eval_ds, 
             work_dir=work_dir)
-    elif args.name == "eval":
+    elif args.mode == "eval":
         evaluate(train_conf=train_conf,
                  eval_ds=eval_ds,
                  work_dir=work_dir)
