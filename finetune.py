@@ -1,3 +1,4 @@
+import argparse
 from functools import partial
 
 from modelscope.metainfo import Trainers
@@ -9,6 +10,7 @@ from modelscope.utils.hub import snapshot_download
 from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from utils.train_conf import *
+
 
 
 def cfg_modify_fn(cfg):
@@ -26,16 +28,16 @@ def cfg_modify_fn(cfg):
     cfg.train.max_epochs=2
     return cfg
 
-def train():
-    train_conf=load_train_conf("trainer_config.json")
-    assert isinstance(train_conf, dict)
+def preprocess_dataset(train_conf: dict,
+                       remap: dict):
+    '''
+    生成hf格式的数据集
 
-    remap={
-        "personality":"style",
-        "comment":"text",
-        "image_hash":"image"
-    }
+    args: train_conf: 训练配置文件
+    remap: 重映射dict
 
+    return: train_ds, eval_ds
+    '''
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
     train_ds = generate_msdataset(dataset_path,
@@ -44,11 +46,18 @@ def train():
     eval_ds = generate_msdataset(dataset_path, 
                                  train_conf["val_json"],
                                  remap)
-
-    # 处理数据集映射
     collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
+    # 处理数据集映射
     train_ds = train_ds.map(collate_fn)
+    eval_ds = eval_ds.map(collate_fn)
     # print(train_ds[0])
+
+    return train_ds, eval_ds
+
+def train(train_conf: dict, 
+          train_ds,
+          eval_ds,
+          work_dir: str="work_dir"):
 
     model_name=train_conf["model_name"]
     # model_dir = snapshot_download(model_name)
@@ -57,7 +66,9 @@ def train():
     args = dict(
         model=model_name, 
         model_revision=train_conf["model_revision"],
+        work_dir=work_dir, 
         train_dataset=train_ds,
+        eval_dataset=eval_ds,
         cfg_modify_fn=cfg_modify_fn,
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
@@ -80,17 +91,52 @@ def train():
     trainer.preprocessor = preprocessor
     trainer.train()
 
+def evaluate(train_conf: dict, 
+             eval_ds,
+             work_dir:str = "work_dir"):
+    # model_dir = snapshot_download(model_name)
+    model_dir=os.path.join(work_dir, "output")
+    # set dataset addr
+    args = dict(
+        model=model_dir, 
+        model_revision=train_conf["model_revision"],
+        eval_dataset=eval_ds,
+        cfg_modify_fn=cfg_modify_fn,
+    )
+    trainer = build_trainer(name=Trainers.ofa, default_args=args)
+    trainer.evaluate()
+
+
 
 
 if __name__=="__main__":
+    parser=argparse.ArgumentParser(description="OFA Style finetune")
+    parser.add_argument("mode", help="select mode", choices=["train", "eval"])
+    parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
+    parser.add_argument("--work_dir", help="specify work dir", type=str, default="work_dir")
+
+    args=parser.parse_args()
+
     # load args from config file
-    style_list=list_styles("personality.txt")
-    style_dict=add_style_token(style_list)
-    print(style_dict)
+    train_conf=load_train_conf(args.trainer_conf)
+    assert isinstance(train_conf, dict)
 
-    work_dir="workspace"
+    work_dir=args.work_dir
+    print(train_conf)
+    print(work_dir)
 
-    # train()
-
-
-    
+    remap={
+        "personality":"style",
+        "comment":"text",
+        "image_hash":"image"
+    }
+    train_ds, eval_ds=preprocess_dataset(train_conf, remap)
+    if args.mode == "train":
+        train(train_conf=train_conf, 
+            train_ds=train_ds, 
+            eval_ds=eval_ds, 
+            work_dir=work_dir)
+    elif args.name == "eval":
+        evaluate(train_conf=train_conf,
+                 eval_ds=eval_ds,
+                 work_dir=work_dir)
