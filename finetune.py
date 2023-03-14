@@ -6,6 +6,7 @@ from modelscope.trainers import build_trainer
 from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.utils.constant import ConfigKeys, ModeKeys
 from modelscope.utils.hub import snapshot_download
+from torchmetrics import PeakSignalNoiseRatio
 
 from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
@@ -25,7 +26,7 @@ def cfg_modify_fn(cfg):
     }, {
         'type': 'IterTimerHook'
     }]
-    cfg.train.max_epochs=2
+    cfg.train.max_epochs=5
     return cfg
 
 def preprocess_dataset(train_conf: dict,
@@ -57,11 +58,12 @@ def preprocess_dataset(train_conf: dict,
 def train(train_conf: dict, 
           train_ds,
           eval_ds,
+          ckpt: str=None,
           work_dir: str="work_dir"):
 
     model_name=train_conf["model_name"]
-    # model_dir = snapshot_download(model_name)
-    model_dir="workspace"
+    model_dir = snapshot_download(model_name)
+    # model_dir="workspace"
     # set dataset addr
     args = dict(
         model=model_name, 
@@ -75,6 +77,7 @@ def train(train_conf: dict,
 
     # 为保安全加上这条assert
     assert type(trainer)==OFATrainer
+    work_dir = args.get("work_dir", "workspace")
     preprocessor = {
         ConfigKeys.train:
             OfaPreprocessorforStylishIC(
@@ -87,8 +90,14 @@ def train(train_conf: dict,
                 mode=ModeKeys.EVAL, 
                 no_collate=True),
     }
+
     trainer.preprocessor = preprocessor
-    trainer.train()
+    if ckpt is None:
+        print("No checkpoint, train from scratch.")
+        trainer.train()
+    else:
+        print("checkpoint dir: "+ckpt) 
+        trainer.train(checkpoint_path=ckpt)
 
 def evaluate(train_conf: dict, 
              eval_ds,
@@ -103,20 +112,21 @@ def evaluate(train_conf: dict,
         eval_dataset=eval_ds,
         cfg_modify_fn=cfg_modify_fn,
     )
-    trainer = build_trainer(name=Trainers.ofa, default_args=args)
     preprocessor = {
         ConfigKeys.train:
             OfaPreprocessorforStylishIC(
-                model_dir=work_dir,
+                model_dir=model_dir,
                 mode=ModeKeys.TRAIN, 
                 no_collate=True),
         ConfigKeys.val:
             OfaPreprocessorforStylishIC(
-                model_dir=work_dir, 
+                model_dir=model_dir, 
                 mode=ModeKeys.EVAL, 
                 no_collate=True),
     }
-    trainer.preprocessor = preprocessor
+
+    trainer = build_trainer(name=Trainers.ofa, default_args=args)
+    trainer.preprocessor=preprocessor
     print(trainer.evaluate())
 
 if __name__=="__main__":
@@ -124,7 +134,7 @@ if __name__=="__main__":
     parser.add_argument("mode", help="select mode", choices=["train", "eval"])
     parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
     parser.add_argument("--work_dir", help="specify work dir", type=str, default="work_dir")
-
+    parser.add_argument("--checkpoint", help="checkpoint", type=str)
     args=parser.parse_args()
 
     # load args from config file
@@ -132,8 +142,8 @@ if __name__=="__main__":
     assert isinstance(train_conf, dict)
 
     work_dir=args.work_dir
-    print(train_conf)
-    print(work_dir)
+    ckpt=args.checkpoint
+    print("work_dir is: "+work_dir)
 
     remap={
         "personality":"style",
