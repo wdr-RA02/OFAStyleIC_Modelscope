@@ -2,19 +2,18 @@
 对Modelscope中OFA image caption的一系列组件进行适当修改，使得任务包含风格属性
 
 ## trainer_conf.json结构
-```json
+```py
 {
     "model_name":"要finetune的模型名称",
     "model_revision": "模型版本",
-    "img_addr":"path_to_PIC/yfcc_images/",
-    // 务必记得加最后那个/
+    "img_addr":"path_to_PIC/yfcc_images/", # 务必记得加最后那个/
     "dataset_path":"path_to_PIC/personality_captions/",
     "file_attr":".jpg",
     "train_json":"train.json",
     "test_json":"test.json",
     "val_json":"val.json",
     "work_dir":"work_dir/distilled_tok/",
-    "prompt":"" //目前还没实现这个功能
+    "prompt":"" #目前还没实现这个功能
 }
 ```
 
