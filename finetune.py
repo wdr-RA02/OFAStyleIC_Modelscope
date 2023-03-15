@@ -1,5 +1,7 @@
 import argparse
 from functools import partial
+from re import T
+from typing import Callable
 
 from modelscope.metainfo import Trainers
 from modelscope.trainers import build_trainer
@@ -13,20 +15,33 @@ from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from utils.train_conf import *
 
 
-def cfg_modify_fn(cfg):
-    cfg.train.hooks = [{
-        'type': 'CheckpointHook',
-        'by_epoch': False,
-        'interval': 5000,
-        'max_checkpoint_num': 3
-    }, {
-        'type': 'TextLoggerHook',
-        'interval': 1
-    }, {
-        'type': 'IterTimerHook'
-    }]
-    cfg.train.max_epochs=3
-    return cfg
+def cfg_modify_fn(max_epoches:int=3,
+                  batch_size:int=4,
+                  num_workers:int=0):
+    
+    def mod_fn(cfg):
+        cfg.train.hooks = [{
+            'type': 'CheckpointHook',
+            'by_epoch': False,
+            'interval': 5000,
+            'max_checkpoint_num': 3
+        }, {
+            'type': 'TextLoggerHook',
+            'interval': 1
+        }, {
+            'type': 'IterTimerHook'
+        }]
+        cfg.train.max_epochs=max_epoches
+        # set up batch and workers
+        cfg.train.dataloader.batch_size_per_gpu=batch_size
+        cfg.train.dataloader.workers_per_gpu=num_workers
+        cfg.evaluation.dataloader.batch_size_per_gpu=batch_size
+        cfg.evaluation.dataloader.workers_per_gpu=num_workers
+
+        return cfg
+
+    return mod_fn
+
 
 def preprocess_dataset(train_conf: dict,
                        remap: dict):
@@ -55,28 +70,35 @@ def preprocess_dataset(train_conf: dict,
     return train_ds, eval_ds
 
 def generate_preprocessors(train_conf: dict,
-                           work_dir: str,
-                           tokenized: bool = False):
+                           tokenize: bool = False):
+    '''
+    生成preprocessor
+
+    args:
+    train_conf: train config字典
+    tokenize: 是否将风格tokenize为<code_k>
+    '''
+    model_dir=snapshot_download(train_conf["model_name"],
+                                revision=train_conf["model_revision"])
     preprocessor = {
         ConfigKeys.train:
             OfaPreprocessorforStylishIC(
-                model_dir=work_dir,
+                model_dir=model_dir,
                 mode=ModeKeys.TRAIN, 
                 no_collate=True),
         ConfigKeys.val:
             OfaPreprocessorforStylishIC(
-                model_dir=work_dir, 
+                model_dir=model_dir, 
                 mode=ModeKeys.EVAL, 
-                no_collate=True),
+                no_collate=True)
     }
 
-    if tokenized:
+    if tokenize:
         # load style_dict
-        # raise NotImplementedError("该部分尚未完工")
         style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
         style_dict=get_style_dict(style_list)
 
-        print(style_dict)
+        # print(style_dict)
         # add style token to tokenizers
         preprocessor[ConfigKeys.train].preprocess.add_style_token(style_dict)
         preprocessor[ConfigKeys.val].preprocess.add_style_token(style_dict)
@@ -84,16 +106,25 @@ def generate_preprocessors(train_conf: dict,
     return preprocessor
 
 
-def train(train_conf: dict, 
-          train_ds,
-          eval_ds,
-          tokenize: bool,
-          ckpt: str=None,
-          work_dir: str="work_dir"):
+def generate_trainer(train_conf: dict, 
+                     train_ds,
+                     eval_ds,
+                     tokenize: bool,
+                     mod_fn: Callable):
+    '''
+    生成含有修改的trainer供训练或eval使用
+    
+    arg: 
+    train_conf: train config字典
+    train_ds, eval_ds: 数据集
+    tokenize: 是否将风格tokenize为<code_k>
+    mod_fn: cfg_modify_fn
 
+    return: trainer
+    '''
     model_name=train_conf["model_name"]
+    work_dir=train_conf["work_dir"]
     # model_dir = snapshot_download(model_name)
-    # model_dir="workspace"
     # set dataset addr
     args = dict(
         model=model_name, 
@@ -101,17 +132,23 @@ def train(train_conf: dict,
         work_dir=work_dir, 
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        cfg_modify_fn=cfg_modify_fn,
+        cfg_modify_fn=mod_fn,
+        preprocessor=generate_preprocessors(train_conf,
+                                            tokenize=tokenize)
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
 
     # 为保安全加上这条assert
     assert type(trainer)==OFATrainer
-    work_dir = args.get("work_dir", "workspace")
+    if tokenize:
+        style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
+        style_dict=get_style_dict(style_list)
+        trainer.model.tokenizer.add_tokens(list(style_dict.values()))
+    
+    return trainer
 
-    trainer.preprocessor = generate_preprocessors(train_conf,
-                                                  work_dir=work_dir,
-                                                  tokenized=tokenize)
+def train(trainer, 
+          ckpt: str=None):
     if ckpt is None:
         print("No checkpoint, train from scratch.")
         trainer.train()
@@ -119,36 +156,21 @@ def train(train_conf: dict,
         print("checkpoint dir: "+ckpt) 
         trainer.train(checkpoint_path=ckpt)
 
-def evaluate(train_conf: dict, 
-             eval_ds,
-             tokenize:bool,
-             work_dir:str = "work_dir"):
-    # model_dir = snapshot_download(model_name)
-    model_dir=os.path.join(work_dir, "output")
-    # set dataset addr
-    args = dict(
-        model=model_dir, 
-        model_revision=train_conf["model_revision"],
-        train_dataset=eval_ds,
-        eval_dataset=eval_ds,
-        cfg_modify_fn=cfg_modify_fn,
-    )
-
-    trainer = build_trainer(name=Trainers.ofa, default_args=args)
-    trainer.preprocessor=generate_preprocessors(train_conf,
-                                                work_dir=work_dir,
-                                                tokenized=tokenize)
+def evaluate(trainer):
     print(trainer.evaluate())
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style finetune tokenized")
     parser.add_argument("mode", help="select mode", choices=["train", "eval"])
-    parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
+    parser.add_argument("--conf", help="trainer config json", type=str, default="trainer_config.json")
     parser.add_argument("--checkpoint", help="checkpoint", type=str)
+    parser.add_argument("--max_epoches", help="max epoch", type=int, default=3)
+    parser.add_argument("--batch_size", help="#samples per batch", type=int, default=4)
+    parser.add_argument("--num_workers", help="num of dataloader", type=int, default=0)
     args=parser.parse_args()
 
     # load args from config file
-    train_conf=load_train_conf(args.trainer_conf)
+    train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
     work_dir=train_conf["work_dir"]
@@ -161,16 +183,17 @@ if __name__=="__main__":
         "comment":"text",
         "image_hash":"image"
     }
-
+    # load datasets
     train_ds, eval_ds=preprocess_dataset(train_conf, remap)
+    # modify_function
+    mod_fn=cfg_modify_fn(args.max_epoches, args.batch_size, args.num_workers)
+    trainer=generate_trainer(train_conf, 
+                             train_ds, 
+                             eval_ds, 
+                             train_conf["tokenize_style"],
+                             mod_fn)
+
     if args.mode == "train":
-        train(train_conf=train_conf, 
-            train_ds=train_ds, 
-            eval_ds=eval_ds, 
-            tokenize=tokenize,
-            work_dir=work_dir)
+        train(trainer, ckpt=ckpt)
     elif args.mode == "eval":
-        evaluate(train_conf=train_conf,
-                 eval_ds=eval_ds,
-                 tokenize=tokenize,
-                 work_dir=work_dir)
+        evaluate(trainer)

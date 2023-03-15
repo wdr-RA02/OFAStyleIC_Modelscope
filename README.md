@@ -1,6 +1,24 @@
 # OFAStyleIC_Modelscope
 对Modelscope中OFA image caption的一系列组件进行适当修改，使得任务包含风格属性
 
+## How to train?
+python3 finetune.py train (--conf path/to/conf.json)
+
+然后坐等训完
+
+~~基本上我用1080ti finetune一个OFA_tiny 2epoch都要12h....~~
+
+反转了, 是我没调batch和num_worker捏
+
+## Train script arguments
+|args|help|default|
+|----|----|-------|
+|--conf path/to/train_conf|指定train configuration json|trainer_config.json|
+|--checkpoint path/to/ckpt|从指定的checkpoint开始训练|None|
+|--max_epoches N          |最多训练多少epoch|3|
+|--batch_size N           |batch大小|4|
+|--num workers N          |dataloader worker个数|0|
+
 ## trainer_conf.json结构
 ```py
 {
@@ -23,12 +41,6 @@
 - [damo/ofa_image-caption_coco_distilled_en, v1.0.1](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)
 - [damo/ofa_pretrain_base_en, v1.0.2](https://modelscope.cn/models/damo/ofa_pretrain_base_en/summary)
 
-## How to train?
-python3 finetune.py train (--trainer_conf path/to/conf.json)
-
-然后坐等训完捏
-
-基本上我用1080ti finetune一个OFA_tiny 2epoch都要12h....
 
 
 ## Credits
