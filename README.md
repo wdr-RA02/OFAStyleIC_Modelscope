@@ -2,7 +2,11 @@
 对Modelscope中OFA image caption的一系列组件进行适当修改，使得任务包含风格属性
 
 ## How to train?
-python3 finetune.py train (--conf path/to/conf.json)
+Simple! 只需要在terminal中输入
+
+```sh
+CUDA_VISIBLE_DEVICES=x python3 finetune.py train (--conf path/to/conf.json)
+```
 
 然后坐等训完
 
@@ -44,7 +48,7 @@ python3 finetune.py train (--conf path/to/conf.json)
 
 
 ## Credits
-- [Personality_dataset](https://openaccess.thecvf.com/content_CVPR_2019/html/Shuster_Engaging_Image_Captioning_via_Personality_CVPR_2019_paper.html)
+- [Personality_Captions](https://openaccess.thecvf.com/content_CVPR_2019/html/Shuster_Engaging_Image_Captioning_via_Personality_CVPR_2019_paper.html)
 
 - [Modelscope](https://modelscope.cn)
 
