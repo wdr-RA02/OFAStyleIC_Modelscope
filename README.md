@@ -42,8 +42,8 @@ CUDA_VISIBLE_DEVICES=x python3 finetune.py train (--conf path/to/conf.json)
 训练好的模型会存放在{work_dir}/output里面
 
 我目前准备使用的模型:
-- [damo/ofa_image-caption_coco_distilled_en, v1.0.1](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)
-- [damo/ofa_pretrain_base_en, v1.0.2](https://modelscope.cn/models/damo/ofa_pretrain_base_en/summary)
+- damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)
+- damo/ofa_pretrain_base_en, v1.0.2  [Modelscope](https://modelscope.cn/models/damo/ofa_pretrain_base_en/summary)  |  [conf json](conf/base_tokenized.json)
 
 
 
