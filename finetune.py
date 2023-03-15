@@ -87,6 +87,7 @@ def generate_preprocessors(train_conf: dict,
 def train(train_conf: dict, 
           train_ds,
           eval_ds,
+          tokenize: bool,
           ckpt: str=None,
           work_dir: str="work_dir"):
 
@@ -110,7 +111,7 @@ def train(train_conf: dict,
 
     trainer.preprocessor = generate_preprocessors(train_conf,
                                                   work_dir=work_dir,
-                                                  tokenized=True)
+                                                  tokenized=tokenize)
     if ckpt is None:
         print("No checkpoint, train from scratch.")
         trainer.train()
@@ -120,6 +121,7 @@ def train(train_conf: dict,
 
 def evaluate(train_conf: dict, 
              eval_ds,
+             tokenize:bool,
              work_dir:str = "work_dir"):
     # model_dir = snapshot_download(model_name)
     model_dir=os.path.join(work_dir, "output")
@@ -135,7 +137,7 @@ def evaluate(train_conf: dict,
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
     trainer.preprocessor=generate_preprocessors(train_conf,
                                                 work_dir=work_dir,
-                                                tokenized=True)
+                                                tokenized=tokenize)
     print(trainer.evaluate())
 
 if __name__=="__main__":
@@ -150,6 +152,7 @@ if __name__=="__main__":
     assert isinstance(train_conf, dict)
 
     work_dir=train_conf["work_dir"]
+    tokenize=train_conf["tokenize_style"]
     ckpt=args.checkpoint
     print("work_dir is: "+work_dir)
 
@@ -158,13 +161,16 @@ if __name__=="__main__":
         "comment":"text",
         "image_hash":"image"
     }
+
     train_ds, eval_ds=preprocess_dataset(train_conf, remap)
     if args.mode == "train":
         train(train_conf=train_conf, 
             train_ds=train_ds, 
             eval_ds=eval_ds, 
+            tokenize=tokenize,
             work_dir=work_dir)
     elif args.mode == "eval":
         evaluate(train_conf=train_conf,
                  eval_ds=eval_ds,
+                 tokenize=tokenize,
                  work_dir=work_dir)
