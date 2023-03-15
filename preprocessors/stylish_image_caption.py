@@ -34,7 +34,8 @@ class OfaPreprocessorforStylishIC(OfaPre):
         self.tokenize_style=self.preprocess.tokenize_style
         self.tokenizer=self.preprocess.tokenizer
         # add "style" key to self.keys
-        self.keys.append(self.STYLE_KEY)
+        if not self.STYLE_KEY in self.keys:
+            self.keys.append(self.STYLE_KEY)
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
 
 
@@ -76,14 +77,13 @@ class OfaStylishICPreprocessor(OfaICP):
                 data: Dict[str, Any]) -> Dict[str, Any]:
         
         assert self.STYLE_KEY in data
-        
         return super().__call__(data)
     
     def add_style_token(self, style_dict: Dict[str, str]):
         self.style_dict = style_dict
-        # Format: {style: "<style_k>"}
+        # Format: {style: "<code_k>"}
         print("Got style dict, len={}".format(len(style_dict)))
-        self.tokenizer.add_tokens(list(self.style_dict.items()))
+        self.tokenizer.add_tokens(list(self.style_dict.values()))
         # open the token mode
         self.tokenize_style = isinstance(self.style_dict, dict)
 
@@ -102,7 +102,7 @@ class OfaStylishICPreprocessor(OfaICP):
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
 
         # get current style
-        cur_style=self.style_dict[data[self.STYLE_KEY]] if self.tokenize_style \
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<unk>") if self.tokenize_style \
                   else data[self.STYLE_KEY]
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt

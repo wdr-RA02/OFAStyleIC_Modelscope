@@ -36,7 +36,7 @@ def get_style_dict(style_list: list):
     '''
     需要的时候调用此函数将personality_captions的风格逐一添加到self.tokenizer里面
     '''
-    style_dict = {style:f"<style_{i}>" for i, style in enumerate(style_list)}
-    # raise NotImplementedError("尚未考虑添加style token的问题")
+    # 暂时没想到怎么加style_k, 先用code_k顶一下吧, 哎...
+    style_dict = {style:f"<code_{i}>" for i, style in enumerate(style_list)}
 
     return style_dict

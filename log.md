@@ -54,6 +54,8 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 
 鉴定为得在trainer里面指定preprocessor
 
+> PS from 03-15: 这方法没完全起作用! T^T
+
 电脑太烂显存只有4g 明天再试吧
 
 
@@ -73,7 +75,7 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 
 3. 周一要跟导师汇报希望还能留下全尸捏
 
-搞完blip以后一定要用huggingface重构, modelscope的文档一言难尽...
+搞完BLIP以后一定要用huggingface重构, modelscope的文档一言难尽...
 
 4. 实在不行用base的pretrain ckpt弄吧
 
@@ -117,16 +119,27 @@ cfg.train.hooks=[{
 |
 |-utils
 |--list_styles(ds_path, style_f_n)->list: 从personalities.txt文件中读取style并返回列表
-|--get_style_dict(style_list)->Dict[str, str]: 接受上述的list进行enumerate, 返回格式为{_STYLE: "<style_k>"}
+|--get_style_dict(style_list)->Dict[str, str]: 
+|            接受上述的list进行enumerate, 返回格式为{_STYLE: "<code_k>"}
 |
 |-finetune.py
-|--generate_preprocessors(train_conf, work_dir, tokenized: bool)->Dict[str, OFAPpSIC]: 生成preprocessor, 基于是否tokenizer的情况进行分别处理
+|--generate_preprocessors(train_conf, 
+|                         work_dir, 
+|                         tokenized: bool)->Dict[str, OFAPpSIC]: 
+|            生成preprocessor, 基于是否tokenizer的情况进行分别处理
 |--__main__
-|--args:{--trainer_conf:train_conf.json位置,
+|--args:{--conf:train_conf.json位置,
          --checkpoint: 是否加载checkpoint
+         --max_epoches
+         --batch_size
+         --num_workers: 模型训练参数
          mode: [train|eval]: 训练格式}
 
 ```
+> modified in 03-15: 
+> - code_k<-style_k
+> - add args
+
 
 感觉origin_style分支可以就此落幕了
 
@@ -139,3 +152,19 @@ ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 - 调查prompt的作用
 
 - 调个base的模型试一下
+
+#### 2023-03-15
+
+1. 一点心声:
+
+说实话蛮难过, 因为之前提及的添加``trainer.preprocessor``的方法没起作用, 训练实际上还是在用他们自己写的OfaPp. (实际上有用的方法是在args里面指定)
+
+而且由于vocab_size是在OFAModel里面指定的, 如果自己加token需要自己多写几个类. 
+为了不伤筋动骨不得不决定废物利用一下, 把style token改为<code_i>
+
+今天GPT-4发布了, 好像是添加了多模态的处理, 感觉它的出现应该会把整个游戏杀死. 哎.
+
+2. 托了上面那个发现的福, 在finetune那里把trainer的构造拆分了出来, 还发现了pcap里有几个不存在的personality. 能不能去提个issue捏
+
+3. TODO: 同昨日
+
