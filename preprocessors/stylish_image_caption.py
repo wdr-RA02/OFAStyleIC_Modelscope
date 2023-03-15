@@ -102,7 +102,7 @@ class OfaStylishICPreprocessor(OfaICP):
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
 
         # get current style
-        cur_style=self.style_dict[data[self.STYLE_KEY]] if self.tokenize_style \
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<unk>") if self.tokenize_style \
                   else data[self.STYLE_KEY]
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
