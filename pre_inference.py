@@ -16,7 +16,7 @@ def get_batch_addr(base_addr:str, hashes: dict):
     for hash in hashes:
         one_data = {
             "image": base_addr+hash+".jpg",
-            "style": hashes[hash].lower()
+            "style": hashes[hash]
         }
         batch_data.append(one_data)
     return batch_data
@@ -37,29 +37,26 @@ def inference_orig(train_conf_file: str,
 
     # define preprocessor and model
     preprocessor=OfaPreprocessorforStylishIC(model_dir=model_dir)
-    model=OfaForAllTasks.from_pretrained(model_dir)
     if tokenize:
         style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
         style_dict=get_style_dict(style_list)
-
+        print(style_dict)
         preprocessor.preprocess.add_style_token(style_dict)
-        print(preprocessor.tokenizer.tokenize(["<code_1>"]))
+        print(preprocessor.tokenizer.encode(["<code_1>"]))
 
     stylish_ic=pipeline(Tasks.image_captioning, 
-                        model=model, 
+                        model=model_dir, 
                         preprocessor=preprocessor)
     
     # result=stylish_ic(img)
-    result=stylish_ic(data)
-    for i in result:
-        print(i)
+    return stylish_ic(data)
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="OFA Style inference")
-    parser.add_argument("--trainer_conf", help="trainer config json", type=str, default="trainer_config.json")
+    parser.add_argument("--conf", help="trainer config json", type=str, default="trainer_config.json")
     args=parser.parse_args()
 
-    train_conf_file=args.trainer_conf
+    train_conf_file=args.conf
 
     batches={
         "2923e28b6f588aff2d469ab2cccfac57":"Obsessive",
@@ -72,5 +69,7 @@ if __name__ == "__main__":
     addr=load_train_conf(train_conf_file)["img_addr"]
     data=get_batch_addr(addr,batches)
 
-    inference_orig("conf/distilled_orig.json", data)
+    result=inference_orig(train_conf_file, data)
+    for i in result:
+        print(i)
 
