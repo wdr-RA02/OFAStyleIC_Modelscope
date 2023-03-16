@@ -1,6 +1,5 @@
 import os
 import re
-from typing import Dict
 from datasets.formatting.formatting import LazyRow
 from modelscope.msdatasets import MsDataset
 
