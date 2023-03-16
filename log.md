@@ -170,6 +170,7 @@ ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 
 #### 2023-03-16
 
+0. 
 **永远先备份模型再删除!**
 **永远先备份模型再删除!!**
 **永远先备份模型再删除!!!**
@@ -177,3 +178,6 @@ ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 你永远也不知道究竟是代码错了还是你错了!!!
 
 好蠢好蠢, 居然把inference写错了怪罪到Preprocessor上去, 八小时心血白费了
+
+具体而言, pre-inference那里我把风格全部小写了, 然后token不就不知道是怎么回事嘛
+然后
