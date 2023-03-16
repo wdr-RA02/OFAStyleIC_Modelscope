@@ -1,12 +1,14 @@
 import os
 import re
+from typing import Dict
+from datasets.formatting.formatting import LazyRow
 from modelscope.msdatasets import MsDataset
 
-def generate_msdataset(ds_path: str, 
-                       json_name: str,
-                       remap_dict=None):
+def generate_msdataset(ds_path: str,
+                            json_name: str,
+                            remap_dict=None):
     '''
-    load pcaptions datasets from the given json
+    load pcaptions datasets from the given json, supports import of test_set
     
     args: ds_path, json_name: 数据集位置
     remap_dict(可选): 是否需要进行remap
@@ -15,13 +17,23 @@ def generate_msdataset(ds_path: str,
     '''
     ds=MsDataset.load('json',
                       data_files={"train":os.path.join(ds_path, json_name)}, 
-                      split="train")
+                      split="train").to_hf_dataset()
+    # 将additional_comments合并到comment里面
+    if "additional_comments" in ds.column_names:
+        def change(x):
+            # print(type(x))
+            assert isinstance(x, LazyRow)
+            x["comment"]=[x["comment"], *x["additional_comments"]]
+            return x
+        
+        ds=ds.map(change, remove_columns="additional_comments")
+        
     if remap_dict is not None:
+        assert isinstance(remap_dict, dict)
         # ds为hf格式的数据集
-        ds=ds.remap_columns(remap_dict)
-        return ds
+        ds=ds.rename_columns(remap_dict)
 
-    return ds.to_hf_dataset()
+    return ds
 
 def collate_pcaption_dataset(data, dataset_dir: str, file_attr: str=".jpg"):
     '''
