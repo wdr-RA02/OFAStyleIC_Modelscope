@@ -45,6 +45,37 @@ CUDA_VISIBLE_DEVICES=x python3 finetune.py train (--conf path/to/conf.json)
 - damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)
 - damo/ofa_pretrain_base_en, v1.0.2  [Modelscope](https://modelscope.cn/models/damo/ofa_pretrain_base_en/summary)  |  [conf json](conf/base_tokenized.json)
 
+## How to inference?
+Also simple! 
+```sh
+CUDA_VISIBLE_DEVICES=x python3 pre_inference.py --conf path/to/conf.json
+```
+
+推理结果保存了一份在{work_dir}/inference_{time}.json里
+
+文件结构:
+```py
+{
+    "model_name": "damo/ofa_pretrain_tiny_en",  # base模型名字
+    "model_revision": "v1.0.1",
+    "n_eval_sample": 10,                        # 样本个数
+    "results": [                     # list, 包含每个样本的reference cap和生成cap
+        {
+            "style":"Style",
+            "image":"path/to/img",
+            "caption":"xxx",
+            "reference":"yyy",
+        },...
+    ]
+}
+```
+
+## Inference script arguments
+|args|help|default|
+|----|----|-------|
+|--conf path/to/train_conf|指定train configuration json|trainer_config.json|
+|--sample_size N          |测试的batch大小|10|
+
 
 
 ## Credits

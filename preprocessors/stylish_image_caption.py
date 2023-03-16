@@ -104,6 +104,9 @@ class OfaStylishICPreprocessor(OfaICP):
         # get current style
         cur_style=self.style_dict.get(data[self.STYLE_KEY], "<unk>") if self.tokenize_style \
                   else data[self.STYLE_KEY]
+        # 教训惨痛, 遂决定添加warning
+        if cur_style=="<unk>":
+            print("WARNING: Got unknown style token, check orig: {}".format(data[self.STYLE_KEY]))
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
