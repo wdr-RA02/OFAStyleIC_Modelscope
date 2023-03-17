@@ -74,6 +74,8 @@ class OfaStylishICPreprocessor(OfaICP):
         dataset_file_attr: 指定图片后缀(必须带点)
         '''
         super().__init__(cfg, model_dir, mode, *args, **kwargs)
+        print("max_image_size={}".format(self.cfg.model.max_image_size))
+        print("patch_image_size={}".format(self.cfg.model.patch_image_size))
         # add random crop to 224x224 to match other works
         assert self.patch_image_size<=self.max_image_size
         self.patch_resize_transform = transforms.Compose([
