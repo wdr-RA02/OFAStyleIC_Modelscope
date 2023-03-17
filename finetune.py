@@ -57,7 +57,6 @@ def generate_preprocessors(train_conf: dict,
     model_dir=model_dir if os.path.exists(model_dir) \
                         else snapshot_download(train_conf["model_name"],
                                 revision=train_conf["model_revision"])
-    
     # 此时config还没有改过来
     preprocessor = {
         ConfigKeys.train:
@@ -147,7 +146,7 @@ def evaluate(train_conf: dict,
     args = dict(
         model=model_dir, 
         model_revision=train_conf["model_revision"],
-        train_dataset=[],
+        train_dataset=eval_ds,
         eval_dataset=eval_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
@@ -159,9 +158,9 @@ def evaluate(train_conf: dict,
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style finetune tokenized")
-    parser.add_argument("mode", help="select mode", choices=["train", "eval"], required=True)
+    parser.add_argument("mode", help="select mode", choices=["train", "eval"])
     parser.add_argument("-c", "--conf", help="trainer config json", type=str, required=True)
-    parser.add_argument("--ckpt", "--checkpoint", help="checkpoint", type=str)
+    parser.add_argument("-p", "--checkpoint", help="checkpoint", type=str)
     parser.add_argument("-e", "--max_epoches", help="max epoch", type=int, default=3)
     parser.add_argument("-b", "--batch_size", help="#samples per batch", type=int, default=4)
     parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)
