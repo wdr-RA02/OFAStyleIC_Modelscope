@@ -6,8 +6,6 @@ from typing import Dict, List
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from modelscope.outputs import OutputKeys
-from sklearn.model_selection import train_test_split
-
 from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from utils.train_conf import *
@@ -65,8 +63,8 @@ def inference_orig(train_conf: dict,
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="OFA Style inference")
-    parser.add_argument("--conf", help="trainer config json", type=str, default="trainer_config.json")
-    parser.add_argument("--sample_size", help="size of samples to select from val set", type=int, default=10)
+    parser.add_argument("-c","--conf", help="trainer config json", type=str, required=True)
+    parser.add_argument("-b","--batch_size", help="size of samples to select from val set", type=int, default=10)
     args=parser.parse_args()
 
     train_conf=load_train_conf(args.conf)
@@ -81,7 +79,7 @@ if __name__ == "__main__":
                                json_name=train_conf["val_json"],
                                remap_dict=remap_dict)
     # randomly select 10 samples from val set
-    batches=random.choices(eval_ds, k=args.sample_size)
+    batches=random.choices(eval_ds, k=args.batch_size)
     # style_dict
     data=get_eval_batch(train_conf, batches)
     result=inference_orig(train_conf, data)
@@ -90,7 +88,7 @@ if __name__ == "__main__":
     result={
         "model_name": train_conf["model_name"],
         "model_revision": train_conf["model_revision"],
-        "n_eval_sample": args.sample_size,
+        "n_eval_sample": args.batch_size,
         "results":result
     }
     # save result to work_dir

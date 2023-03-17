@@ -1,22 +1,26 @@
+from functools import partial
 import os
 import re
 from datasets.formatting.formatting import LazyRow
 from modelscope.msdatasets import MsDataset
 
 def generate_msdataset(ds_path: str,
-                            json_name: str,
-                            remap_dict=None):
+                       json_name: str,
+                       remap_dict=None,
+                       parts: str=""):
     '''
     load pcaptions datasets from the given json, supports import of test_set
     
-    args: ds_path, json_name: 数据集位置
-    remap_dict(可选): 是否需要进行remap
-
+    args: 
+    ds_path, json_name:     数据集位置
+    remap_dict(可选):       是否需要进行remap
+    parts(可选): str"[a:b]" 是否切片数据集
+    
     return: ds hf类型的数据集
     '''
     ds=MsDataset.load('json',
                       data_files={"train":os.path.join(ds_path, json_name)}, 
-                      split="train").to_hf_dataset()
+                      split="train"+parts).to_hf_dataset()
     # 将additional_comments合并到comment里面
     if "additional_comments" in ds.column_names:
         def change(x):
@@ -33,6 +37,33 @@ def generate_msdataset(ds_path: str,
         ds=ds.rename_columns(remap_dict)
 
     return ds
+
+def generate_train_eval_ds(train_conf: dict,
+                       remap: dict):
+    '''
+    生成hf格式的数据集
+
+    args: train_conf: 训练配置文件
+    remap: 重映射dict
+
+    return: train_ds, eval_ds
+    '''
+    img_addr=train_conf["img_addr"]
+    dataset_path=train_conf["dataset_path"]
+    train_ds = generate_msdataset(dataset_path,
+                                train_conf["train_json"],
+                                remap)
+    eval_ds = generate_msdataset(dataset_path, 
+                                 train_conf["test_json"],
+                                 remap,
+                                 parts="[:100]")
+    collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
+    # 处理数据集映射
+    train_ds = train_ds.map(collate_fn)
+    eval_ds = eval_ds.map(collate_fn)
+    # print(train_ds[0])
+
+    return train_ds, eval_ds
 
 def collate_pcaption_dataset(data, dataset_dir: str, file_attr: str=".jpg"):
     '''

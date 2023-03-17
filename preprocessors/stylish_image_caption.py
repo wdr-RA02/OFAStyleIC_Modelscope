@@ -1,9 +1,10 @@
+from torchvision import transforms
 from datasets.formatting.formatting import LazyDict
 # import torch
 from modelscope.preprocessors.multi_modal import OfaPreprocessor as OfaPre
 from modelscope.preprocessors.ofa import OfaImageCaptioningPreprocessor as OfaICP
 from modelscope.utils.constant import ModeKeys
-from typing import Any, Dict, List, Union
+from typing import Any, Callable, Dict, List, Union
 from modelscope.preprocessors.builder import PREPROCESSORS
 from modelscope.utils.constant import (Fields, ModeKeys)
 
@@ -14,17 +15,23 @@ class OfaPreprocessorforStylishIC(OfaPre):
     def __init__(self, 
             model_dir: str, 
             mode=ModeKeys.INFERENCE, 
-            *args, **kwargs):
+            cfg_modify_fn: Callable=None,
+            *args, 
+            **kwargs):
         '''
         OfaPreprocessorforStylishIC: 在Modelscope提供的OFAPreprocessor基础上加入
         风格要素, 具体而言包括修改preprocess为OFAStylishICP, 加入prompt以及修改data结构
 
-        args: style_key: 指定data中代表风格的key, 默认为`style`
-        dataset_dir: 指定数据集目录
-        dataset_file_attr: 指定图片后缀(必须带点)
+        args: 
+        model_dir: str: 模型位置
+        mode: ("train", "eval", "inference"): preprocessor状态
+        cfg_modify_fn: cfg修改函数
         '''
         super().__init__(model_dir, mode, *args, **kwargs)
-
+        self.cfg_modify_fn=cfg_modify_fn
+        if self.cfg_modify_fn is not None:
+            # 在trainer就位之前先通过cfg_modify_fn修改好cfg
+            self.cfg=self.cfg_modify_fn(self.cfg)
         # 在OFAPreprocessor的基础上修改data preprocessor, key和tokenizer
         self.preprocess = OfaStylishICPreprocessor(cfg=self.cfg, 
                     model_dir=model_dir, 
@@ -67,6 +74,21 @@ class OfaStylishICPreprocessor(OfaICP):
         dataset_file_attr: 指定图片后缀(必须带点)
         '''
         super().__init__(cfg, model_dir, mode, *args, **kwargs)
+        print("max_image_size={}".format(self.cfg.model.max_image_size))
+        print("patch_image_size={}".format(self.cfg.model.patch_image_size))
+        # add random crop to 224x224 to match other works
+        assert self.patch_image_size<=self.max_image_size
+        self.patch_resize_transform = transforms.Compose([
+            lambda image: image.convert('RGB'),
+            transforms.Resize(
+                (self.max_image_size, self.max_image_size),
+                interpolation=transforms.InterpolationMode.BICUBIC),
+            transforms.RandomCrop(
+                (self.patch_image_size, self.patch_image_size)
+            ),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=self.mean, std=self.std),
+        ])
         # style tokenizer
         self.style_dict = None
         self.tokenize_style = False
@@ -97,6 +119,7 @@ class OfaStylishICPreprocessor(OfaICP):
         如果只输入image_hash, 那么必须通过set_dataset_dir指定数据集目录和文件后缀
         return 与父类的该函数一样返回字典,包含source, image, mask and label data.
         '''
+
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")

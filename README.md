@@ -15,13 +15,13 @@ CUDA_VISIBLE_DEVICES=x python3 finetune.py train (--conf path/to/conf.json)
 反转了, 是我没调batch和num_worker捏
 
 ## Train script arguments
-|args|help|default|
-|----|----|-------|
-|--conf path/to/train_conf|指定train configuration json|trainer_config.json|
-|--checkpoint path/to/ckpt|从指定的checkpoint开始训练|None|
-|--max_epoches N          |最多训练多少epoch|3|
-|--batch_size N           |batch大小|4|
-|--num workers N          |dataloader worker个数|0|
+| args                             | help                       | default             |
+|----------------------------------|-----------------------------|----------------------|
+| -c/--conf path/to/train_conf     | 指定train configuration json | *required param*    |
+| -p/--checkpoint path/to/ckpt     | 从指定的checkpoint开始训练   | None                |
+| -e/--max_epoches N               | 最多训练多少epoch            | 3                   |
+| -b/--batch_size N                | batch大小                    | 4                   |
+| -w/--num workers N               | dataloader worker个数        | 0                   |
 
 ## trainer_conf.json结构
 ```py
@@ -71,10 +71,10 @@ CUDA_VISIBLE_DEVICES=x python3 pre_inference.py --conf path/to/conf.json
 ```
 
 ## Inference script arguments
-|args|help|default|
-|----|----|-------|
-|--conf path/to/train_conf|指定train configuration json|trainer_config.json|
-|--sample_size N          |测试的batch大小|10|
+| args                         | help                       | default             |
+|-------------------------------|-----------------------------|----------------------|
+| -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
+| -b/--batch_size N            | 测试的batch大小               | 10                  |
 
 
 

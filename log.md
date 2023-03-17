@@ -52,9 +52,8 @@ modelscope官网给的解决方案是dataset转成huggingface那套然后再map
 
 ~~鉴定为不得不重写OFATrainer~~
 
-鉴定为得在trainer里面指定preprocessor
+鉴定为得在trainer里面指定preprocessor^[from 03-15: 这方法没完全起作用! T^T]
 
-> PS from 03-15: 这方法没完全起作用! T^T
 
 电脑太烂显存只有4g 明天再试吧
 
@@ -182,10 +181,38 @@ ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 好蠢好蠢, 居然把inference写错了怪罪到Preprocessor上去, 八小时心血白费了
 
 具体而言, pre-inference那里我把风格全部小写了, 然后token不就不知道是怎么回事嘛
-然后
+然后我就以为是Pp的问题就删了, 结果并不是然后之前那个就白训了^[modified in 2023-03-17]
 
 1. 很好很好, 终于获得了像点样子的模型. 俗话说行百里者半九十不过就是这么回事罢
 
-本来今天的汇报又delay到了明天啊哈哈哈
+   本来今天的汇报又delay到了明天啊哈哈哈
 
 2. TODO: 还是写metric, 然后训练多几个版本, 然后考虑一下传到modelscope里面
+
+#### 2023-03-17
+
+1. notes
+metric原始输入:
+```python
+Input={
+       'nsentences': n,
+       'net_input': {'input_ids': prompt: List[int], 
+                     'patch_images': imgs: List[Tensor]
+                    }, 
+       'labels': one_data["text"]: List[List[str]] 
+}
+
+
+output={
+    'caption': gen_captions: List[List[str]]    #每个List[str]里只有一个内容
+    'samples': inputs: Dict[str, Union[str, list]]
+}
+
+```
+
+2. 
+发现了一个大问题: 其他人训练都是cut成224\*224的, 然而我还搁着搞480\*480, 感觉应该有一点点关系, 不然BLEU怎么可能比Updown这些还差呢
+   
+晚上等base弄好了看看情况重训一个吧(熟悉的展开hh)
+
+这两天该忙外文翻译了, 其实这种活用deepl也不是不能解
