@@ -114,6 +114,7 @@ def generate_trainer(train_conf: dict,
         eval_dataset=eval_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
+                                            mod_fn=mod_fn,
                                             tokenize=tokenize)
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
@@ -150,6 +151,7 @@ def evaluate(train_conf: dict,
         eval_dataset=eval_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
+                                            mod_fn=mod_fn,
                                             tokenize=tokenize)
     )
     trainer=build_trainer(name=Trainers.ofa, default_args=args)
