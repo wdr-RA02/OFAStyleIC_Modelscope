@@ -11,9 +11,11 @@ def generate_msdataset(ds_path: str,
     '''
     load pcaptions datasets from the given json, supports import of test_set
     
-    args: ds_path, json_name: 数据集位置
-    remap_dict(可选): 是否需要进行remap
-
+    args: 
+    ds_path, json_name:     数据集位置
+    remap_dict(可选):       是否需要进行remap
+    parts(可选): str"[a:b]" 是否切片数据集
+    
     return: ds hf类型的数据集
     '''
     ds=MsDataset.load('json',
