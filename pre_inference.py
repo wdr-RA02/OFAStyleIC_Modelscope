@@ -65,8 +65,8 @@ def inference_orig(train_conf: dict,
 
 if __name__ == "__main__":
     parser=argparse.ArgumentParser(description="OFA Style inference")
-    parser.add_argument("--conf", help="trainer config json", type=str, default="trainer_config.json")
-    parser.add_argument("--sample_size", help="size of samples to select from val set", type=int, default=10)
+    parser.add_argument("-c","--conf", help="trainer config json", type=str, reqiured=True)
+    parser.add_argument("-b","--batch_size", help="size of samples to select from val set", type=int, default=10)
     args=parser.parse_args()
 
     train_conf=load_train_conf(args.conf)

@@ -189,3 +189,21 @@ ref: https://modelscope.cn/docs/%E6%A8%A1%E5%9E%8B%E7%9A%84%E8%AF%84%E4%BC%B0
 本来今天的汇报又delay到了明天啊哈哈哈
 
 2. TODO: 还是写metric, 然后训练多几个版本, 然后考虑一下传到modelscope里面
+
+#### 2023-03-17
+
+1. notes
+metric原始输入:
+```python
+Input={'nsentences': n,
+       'net_input': {'input_ids': prompt: List[int], 
+                     'patch_images': imgs: List[Tensor], 
+                     'labels': one_data["text"]: List[List[str]]} 
+      }
+
+
+output:{'caption': gen_captions: List[List[str]]    #每个List[str]里只有一个内容
+        'samples': inputs: Dict[str, Union[str, list]]
+       }
+
+```
