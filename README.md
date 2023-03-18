@@ -76,6 +76,12 @@ CUDA_VISIBLE_DEVICES=x python3 pre_inference.py --conf path/to/conf.json
 | -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
 | -b/--batch_size N            | 测试的batch大小               | 10                  |
 
+## How to save model?
+shell在代码根目录下输入: 
+```sh
+python3 -m utils.backup_model --conf path_to_conf
+```
+然后就可以在work_dir文件夹下找到包含模型和配置的tar.gz文件
 
 
 ## Credits

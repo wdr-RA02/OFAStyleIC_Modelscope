@@ -55,8 +55,7 @@ def generate_train_eval_ds(train_conf: dict,
                                 remap)
     eval_ds = generate_msdataset(dataset_path, 
                                  train_conf["test_json"],
-                                 remap,
-                                 parts="[:100]")
+                                 remap)
     collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
     # 处理数据集映射
     train_ds = train_ds.map(collate_fn)
