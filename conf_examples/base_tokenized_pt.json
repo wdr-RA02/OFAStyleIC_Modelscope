@@ -1,0 +1,13 @@
+{
+    "model_name":"damo/ofa_pretrain_base_en",
+    "model_revision": "v1.0.2",
+    "tokenize_style": true,
+    "img_addr":"path_to_PCap/yfcc_images/",
+    "dataset_path":"path_to_PCap/personality_captions/",
+    "file_attr":".jpg",
+    "train_json":"train.json",
+    "test_json":"test.json",
+    "val_json":"val.json",
+    "work_dir":"./work_dir/base_tokenized_pt/",
+    "prompt":""
+}

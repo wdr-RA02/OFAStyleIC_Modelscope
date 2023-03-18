@@ -1,6 +1,6 @@
 {
-    "model_name":"damo/ofa_pretrain_base_en",
-    "model_revision": "v1.0.2",
+    "model_name":"damo/ofa_image-caption_coco_distilled_en",
+    "model_revision": "v1.0.1",
     "tokenize_style": true,
     "img_addr":"path_to_PCap/yfcc_images/",
     "dataset_path":"path_to_PCap/personality_captions/",
@@ -8,6 +8,6 @@
     "train_json":"train.json",
     "test_json":"test.json",
     "val_json":"val.json",
-    "work_dir":"./work_dir/base_tokenized/",
+    "work_dir":"./work_dir/distilled_tok_coco/",
     "prompt":""
 }
