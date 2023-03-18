@@ -20,10 +20,10 @@ class ImageCaptionMetric(TxtGenMetric):
                         inputs: Dict[str, List[str]]):
         # squeeze each ele of output["caption"]
         cap_outputs={
-            self.pred_text: [k for caps in outputs[self.pred_text] for k in caps]
+            self.pred_text: [k.lower() for caps in outputs[self.pred_text] for k in caps]
         }
         multi_cap_inputs={
-            self.target_text: inputs[self.target_text]
+            self.target_text: [list(map(lambda x:x.lower(), k)) for k in inputs[self.target_text]]
         }
 
         return cap_outputs, multi_cap_inputs
