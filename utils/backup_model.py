@@ -1,11 +1,10 @@
-from operator import ge
 import os
 import argparse
 import tarfile
 import json
 
 from datetime import datetime as dt
-from .train_conf import load_train_conf
+from utils.train_conf import load_train_conf
 
 def get_tar_name(dir: str):
     '''
@@ -92,6 +91,7 @@ def archive_model_dir(model_path: str,
     os.remove(example_path)
 
 def archive_checkpoint():
+    # ckpt好像也加载不进来, 就不实现了吧(bushi)
     raise NotImplementedError("checkpoint save not yet implemented")
 
 if __name__=="__main__":
@@ -99,7 +99,6 @@ if __name__=="__main__":
     parser.add_argument("--conf", help="train conf file", required=True)
     parser.add_argument("-o", "--out_dir", help="dir to save the tar file", default="./work_dir/")
     parser.add_argument("-e","--example_json", help="archive example json instead of the original", action="store_true")
-    parser.add_argument("--save_checkpoint", help="whether to save the last checkpoint", action="store_true")
 
     args=parser.parse_args()
     # add ./ to the head of the conf file path
@@ -118,8 +117,6 @@ if __name__=="__main__":
                       train_conf_dir, 
                       out_tar_path, 
                       generate_example=args.example_json)
-    if args.save_checkpoint:
-        archive_checkpoint()
 
 
 

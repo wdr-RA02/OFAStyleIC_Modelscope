@@ -1,7 +1,6 @@
 import os
 import json
 
-
 def load_train_conf(train_conf_filename: str):
     '''
     加载训练文件配置json
@@ -32,7 +31,7 @@ def list_styles(dataset_path: str,
     
     return style_list
 
-def get_style_dict(style_list: list):
+def get_style_dict_from_ls(style_list: list):
     '''
     需要的时候调用此函数将personality_captions的风格逐一添加到self.tokenizer里面
     '''
@@ -40,3 +39,10 @@ def get_style_dict(style_list: list):
     style_dict = {style:f"<code_{i}>" for i, style in enumerate(style_list)}
 
     return style_dict
+
+def generate_style_dict(train_conf: dict):
+    '''
+    根据train_conf直接返回需要的style_dict
+    '''
+    style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
+    return get_style_dict_from_ls(style_list)

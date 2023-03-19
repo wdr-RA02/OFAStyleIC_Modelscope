@@ -1,6 +1,5 @@
-from functools import partial
-import os
 import re
+from .constants import *
 from datasets.formatting.formatting import LazyRow
 from modelscope.msdatasets import MsDataset
 
@@ -39,7 +38,9 @@ def generate_msdataset(ds_path: str,
     return ds
 
 def generate_train_eval_ds(train_conf: dict,
-                       remap: dict):
+                           train: bool=False,
+                           eval: bool=False,
+                           remap: dict=None):
     '''
     生成hf格式的数据集
 
@@ -50,17 +51,20 @@ def generate_train_eval_ds(train_conf: dict,
     '''
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
-    train_ds = generate_msdataset(dataset_path,
-                                train_conf["train_json"],
-                                remap)
-    eval_ds = generate_msdataset(dataset_path, 
-                                 train_conf["test_json"],
-                                 remap)
     collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
-    # 处理数据集映射
-    train_ds = train_ds.map(collate_fn)
-    eval_ds = eval_ds.map(collate_fn)
-    # print(train_ds[0])
+    train_ds, eval_ds=None, None
+    # generate dataset according to needs
+    if train:
+        train_ds = generate_msdataset(dataset_path,
+                                    train_conf["train_json"],
+                                    remap)
+        train_ds = train_ds.map(collate_fn)
+    if eval:
+        eval_ds = generate_msdataset(dataset_path, 
+                                    train_conf["test_json"],
+                                    remap)
+
+        eval_ds = eval_ds.map(collate_fn)
 
     return train_ds, eval_ds
 

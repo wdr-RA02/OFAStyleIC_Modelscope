@@ -1,19 +1,9 @@
-import argparse
 import random
-import json
 from datetime import datetime as dt
-from typing import Dict, List
 from modelscope.pipelines import pipeline
-from modelscope.utils.constant import Tasks
-from modelscope.outputs import OutputKeys
-from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
-from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
-from utils.train_conf import *
-
-
-def generate_style_dict(train_conf: dict):
-    style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
-    return get_style_dict(style_list)
+from .utils.constants import *
+from .utils.build_dataset import generate_msdataset, collate_pcaption_dataset
+from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
 
 
 def get_eval_batch(train_conf: dict,
@@ -25,7 +15,7 @@ def get_eval_batch(train_conf: dict,
     return out_data
 
 
-def inference_orig(train_conf: dict,
+def start_inference(train_conf: dict,
                    data: List[Dict[str,str]]):
     '''
     data: ["style", "image", "text"]
@@ -61,28 +51,24 @@ def inference_orig(train_conf: dict,
         })
     return result
 
-if __name__ == "__main__":
-    parser=argparse.ArgumentParser(description="OFA Style inference")
-    parser.add_argument("-c","--conf", help="trainer config json", type=str, required=True)
-    parser.add_argument("-b","--batch_size", help="size of samples to select from val set", type=int, default=10)
-    args=parser.parse_args()
 
+def inference(args: argparse.Namespace):
     train_conf=load_train_conf(args.conf)
 
     # load eval dataset\
-    remap_dict={
+    remap={
         "personality":"style",
         "comment":"text",
         "image_hash":"image"
     }
     eval_ds=generate_msdataset(ds_path=train_conf["dataset_path"], 
                                json_name=train_conf["val_json"],
-                               remap_dict=remap_dict)
+                               remap_dict=remap)
     # randomly select 10 samples from val set
     batches=random.choices(eval_ds, k=args.batch_size)
     # style_dict
     data=get_eval_batch(train_conf, batches)
-    result=inference_orig(train_conf, data)
+    result=start_inference(train_conf, data)
     print(*result)
     # add model info
     result={
@@ -97,4 +83,3 @@ if __name__ == "__main__":
     with open(result_filename, "w") as f:
         json.dump(result, f, indent=4)
     print("Inference also saved to {}".format(result_filename))
-

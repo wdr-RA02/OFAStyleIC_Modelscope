@@ -1,12 +1,14 @@
-from torchvision import transforms
+from typing import Any, Callable, Dict, Union
+
 from datasets.formatting.formatting import LazyDict
+from modelscope.preprocessors.builder import PREPROCESSORS
 # import torch
 from modelscope.preprocessors.multi_modal import OfaPreprocessor as OfaPre
-from modelscope.preprocessors.ofa import OfaImageCaptioningPreprocessor as OfaICP
-from modelscope.utils.constant import ModeKeys
-from typing import Any, Callable, Dict, List, Union
-from modelscope.preprocessors.builder import PREPROCESSORS
-from modelscope.utils.constant import (Fields, ModeKeys)
+from modelscope.preprocessors.ofa import \
+    OfaImageCaptioningPreprocessor as OfaICP
+from modelscope.utils.constant import Fields, ModeKeys
+from torchvision import transforms
+
 
 # 按照modelscope的要求注册preprocessor
 @PREPROCESSORS.register_module(
@@ -123,9 +125,9 @@ class OfaStylishICPreprocessor(OfaICP):
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
-
         # get current style
-        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<unk>") if self.tokenize_style \
+        # for unknown style, we use <code_i+1> instead of <unk>
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<code_{}>".format(len(self.style_dict))) if self.tokenize_style \
                   else data[self.STYLE_KEY]
         # 教训惨痛, 遂决定添加warning
         if cur_style=="<unk>":
