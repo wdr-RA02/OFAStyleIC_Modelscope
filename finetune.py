@@ -4,6 +4,7 @@ from typing import Callable
 
 from modelscope.metainfo import Trainers
 from modelscope.trainers import build_trainer
+from modelscope.models.multi_modal import OfaForAllTasks
 from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.utils.constant import ConfigKeys, ModeKeys
 from modelscope.utils.hub import snapshot_download
@@ -11,7 +12,11 @@ from modelscope.utils.hub import snapshot_download
 from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_train_eval_ds
 from utils.train_conf import *
-from metric.stylish_ic_metric import ImageCaptionMetric
+from metric.stylish_ic_metric import *
+# 注册模块
+METRICS.register_module(group_key=default_group, 
+                        module_name="image-caption-metric", 
+                        module_cls=ImageCaptionMetric)
 
 def cfg_modify_fn(max_epoches:int=3,
                   batch_size:int=4,
@@ -19,7 +24,8 @@ def cfg_modify_fn(max_epoches:int=3,
     def mod_fn(cfg):
         # required by p_cap
         cfg.model.patch_image_size=224
-        cfg.model.max_image_size=256        
+        cfg.model.max_image_size=256
+        # config adam begin lr        
         cfg.train.hooks = [{
             'type': 'CheckpointHook',
             'by_epoch': False,
@@ -121,6 +127,12 @@ def generate_trainer(train_conf: dict,
 
     # 为保安全加上这条assert
     assert type(trainer)==OFATrainer
+    # froze the resnet
+    assert hasattr(trainer, "model") and isinstance(trainer.model, OfaForAllTasks)
+    for name, param in trainer.model.named_parameters():
+        if "embed_images" in name:
+            param.requires_grad=False
+
     if tokenize:
         style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
         style_dict=get_style_dict(style_list)
@@ -148,6 +160,7 @@ def evaluate(train_conf: dict,
         model=model_dir, 
         model_revision=train_conf["model_revision"],
         train_dataset=eval_ds,
+        work_dir=train_conf["work_dir"],
         eval_dataset=eval_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
