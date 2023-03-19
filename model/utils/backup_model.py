@@ -1,10 +1,8 @@
-import os
-import argparse
 import tarfile
-import json
-
-from datetime import datetime as dt
+from .constants import *
 from .train_conf import load_train_conf
+from datetime import datetime as dt
+
 
 def get_tar_name(dir: str):
     '''

@@ -1,6 +1,5 @@
-from functools import partial
-import os
 import re
+from .constants import *
 from datasets.formatting.formatting import LazyRow
 from modelscope.msdatasets import MsDataset
 
