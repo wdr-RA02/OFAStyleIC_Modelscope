@@ -196,19 +196,23 @@ metric原始输入:
 ```python
 Input={
        'nsentences': n,
-       'net_input': {'input_ids': prompt: List[int], 
-                     'patch_images': imgs: List[Tensor]
+       'net_input': {'input_ids':    prompt: List[int], 
+                     'patch_images': imgs: List[Tensor],
+                     'labels':       [[input_captions_1], ...]: List[List[str]]
                     }, 
        'labels': one_data["text"]: List[List[str]] 
 }
 
-
 output={
-    'caption': gen_captions: List[List[str]]    #每个List[str]里只有一个内容
-    'samples': inputs: Dict[str, Union[str, list]]
+    'caption': [[gen_caption_i], ...]: List[List[str]]    #每个List[str]里只有一个内容
+    'samples': [{
+        'style': style:str,
+        'text':  input_cap:str,
+        'image': img_addr:str
+    },...]: List[Dict[str, str]]
 }
-
 ```
+this^[modified in 2023-03-19]
 
 2. 
 发现了一个大问题: 其他人训练都是cut成224\*224的, 然而我还搁着搞480\*480, 感觉应该有一点点关系, 不然BLEU怎么可能比Updown这些还差呢
@@ -216,3 +220,26 @@ output={
 晚上等base弄好了看看情况重训一个吧(熟悉的展开hh)
 
 这两天该忙外文翻译了, 其实这种活用deepl也不是不能解
+
+### 2023-03-19
+
+1. 用pycocoeval重写了一下metric发现也没有那么差, 最起码比19年的baseline厉害点
+
+顺手记录一下这玩意需要的输入输出
+
+```python
+# 模型的输出和ground truth都是这个格式
+reference={
+    "id_0":[{"caption": caption_0_j},...],
+    "id_1":[{"caption": caption_1_j},...],
+    ...
+}
+
+# 经过PTBTokenizer以后
+reference_ptb={
+    "id_0":[caption_0_0, caption_0_1,...],
+    ...
+}
+```
+
+2. TODO: 看一下怎么提升性能了, 然后慢慢把一些东西迁移到hf那套去, 只留绝对必要的东西在modelscope下面

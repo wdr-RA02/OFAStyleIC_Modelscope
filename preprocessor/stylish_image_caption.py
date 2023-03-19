@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Dict, Union
 
 from datasets.formatting.formatting import LazyDict
 from modelscope.preprocessors.builder import PREPROCESSORS

@@ -4,7 +4,7 @@ import tarfile
 import json
 
 from datetime import datetime as dt
-from model.utils.train_conf import load_train_conf
+from utils.train_conf import load_train_conf
 
 def get_tar_name(dir: str):
     '''
