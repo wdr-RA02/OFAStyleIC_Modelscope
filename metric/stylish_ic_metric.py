@@ -44,7 +44,7 @@ class ImageCaptionMetric(Metric):
         self.tokenizer=PTBTokenizer()
 
     def add(self, outputs: Dict, inputs: Dict):
-                # squeeze each ele of output["caption"]
+        # squeeze each ele of output["caption"]
         # image tensors, no use at all
         inputs.pop("net_input",None)
         def pop_empty(inputs: List[str]):

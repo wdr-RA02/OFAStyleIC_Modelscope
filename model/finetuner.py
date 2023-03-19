@@ -80,14 +80,3 @@ def train(args: argparse.Namespace):
                             train_ds, 
                             mod_fn)
     start_train(trainer, ckpt=ckpt)
-
-# if __name__=="__main__":
-#     parser=argparse.ArgumentParser(description="OFA Style finetune tokenized")
-#     parser.add_argument("-c", "--conf", help="trainer config json", type=str, required=True)
-#     parser.add_argument("-p", "--checkpoint", help="checkpoint", type=str)
-#     parser.add_argument("-e", "--max_epoches", help="max epoch", type=int, default=3)
-#     parser.add_argument("-b", "--batch_size", help="#samples per batch", type=int, default=4)
-#     parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)
-#     args=parser.parse_args()
-
-#     train(args)
