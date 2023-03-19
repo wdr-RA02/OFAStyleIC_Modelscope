@@ -1,4 +1,4 @@
-import os.path as osp
+import os
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.cider.cider import Cider
@@ -56,7 +56,7 @@ class ImageCaptionMetric(Metric):
             return new_list
         
         # use filename as image_id
-        image_ids=[osp.split(k[self.image_text])[-1] for k in inputs[self.sample_text]]
+        image_ids=[os.path.split(k[self.image_text])[-1] for k in inputs[self.sample_text]]
         # ref:{id: [{"caption":cap}]}
         self.reference.update({i:caps for i,caps in zip(image_ids,map(pop_empty, outputs[self.pred_text])) \
                        if len(caps)>0})
