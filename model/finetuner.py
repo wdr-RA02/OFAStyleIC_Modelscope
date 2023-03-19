@@ -1,8 +1,8 @@
 from .utils import generate_preprocessors, cfg_modify_fn
 from .utils.constants import *
 from .utils.build_dataset import generate_train_eval_ds
-from modelscope.metainfo import Trainers
 from modelscope.trainers import build_trainer
+from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.models.multi_modal import OfaForAllTasks
 

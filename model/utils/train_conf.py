@@ -1,4 +1,5 @@
-from .constants import *
+import os
+import json
 
 def load_train_conf(train_conf_filename: str):
     '''
