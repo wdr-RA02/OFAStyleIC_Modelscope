@@ -123,9 +123,10 @@ class OfaStylishICPreprocessor(OfaICP):
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
-
+        print("prompt: {}".format(new_prompt))
         # get current style
-        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<unk>") if self.tokenize_style \
+        # for unknown style, we use <code_i+1> instead of <unk>
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<code_{}>".format(len(self.style_dict))) if self.tokenize_style \
                   else data[self.STYLE_KEY]
         # 教训惨痛, 遂决定添加warning
         if cur_style=="<unk>":

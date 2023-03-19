@@ -1,5 +1,4 @@
 import argparse
-from functools import partial
 from typing import Callable
 
 from modelscope.metainfo import Trainers
@@ -9,10 +8,14 @@ from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.utils.constant import ConfigKeys, ModeKeys
 from modelscope.utils.hub import snapshot_download
 
-from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
+from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_train_eval_ds
 from utils.train_conf import *
 from metric.stylish_ic_metric import *
+
+from modelscope.metrics.builder import METRICS
+from modelscope.utils.registry import default_group
+from metric.stylish_ic_metric import ImageCaptionMetric
 # 注册模块
 METRICS.register_module(group_key=default_group, 
                         module_name="image-caption-metric", 

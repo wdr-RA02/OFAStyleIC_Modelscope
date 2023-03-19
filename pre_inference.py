@@ -6,7 +6,7 @@ from typing import Dict, List
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 from modelscope.outputs import OutputKeys
-from preprocessors.stylish_image_caption import OfaPreprocessorforStylishIC
+from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
 from utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from utils.train_conf import *
 
