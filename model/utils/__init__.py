@@ -42,7 +42,7 @@ def generate_preprocessors(train_conf: dict,
     tokenize: 是否将风格tokenize为<code_k>
     '''
     model_dir=os.path.join(train_conf["work_dir"], "output")
-    model_dir=model_dir if os.path.exists(os.path.join(model_dir),"pytorch_model.bin") \
+    model_dir=model_dir if os.path.exists(os.path.join(model_dir,"pytorch_model.bin")) \
                         else snapshot_download(train_conf["model_name"],
                                 revision=train_conf["model_revision"])
     # 此时config还没有改过来
