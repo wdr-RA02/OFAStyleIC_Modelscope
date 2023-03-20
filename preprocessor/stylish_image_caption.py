@@ -121,9 +121,8 @@ class OfaStylishICPreprocessor(OfaICP):
         如果只输入image_hash, 那么必须通过set_dataset_dir指定数据集目录和文件后缀
         return 与父类的该函数一样返回字典,包含source, image, mask and label data.
         '''
-
-        sample: Dict[str, Any]=super()._build_infer_sample(data)
-        # define the new prompt
+        sample: Dict[str, Any]=dict()
+        # 本来net_input一点也不想给东西, 结果人家硬是要, 那就随便加个style吧
         new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
         # get current style
         # for unknown style, we use <code_i+1> instead of <unk>
@@ -133,8 +132,19 @@ class OfaStylishICPreprocessor(OfaICP):
         if cur_style=="<code_{}>".format(len(self.style_dict)):
             print("WARNING: Got unknown style token, check orig: {}".format(data[self.STYLE_KEY]))
         inputs=new_prompt.format(cur_style)
+
+        if self.mode==ModeKeys.EVAL:
+            # skip processing image for eval mode, since it's not required in the metric anyway
+            # copy from super
+            if "text" in self.column_map and self.column_map["text"] in data:
+                sample["label"] = data[self.column_map["text"]]
+        else:
+            # add everything else
+            sample=super()._build_infer_sample(data)
+        # define the new prompt
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
+        
         return sample
     
 
