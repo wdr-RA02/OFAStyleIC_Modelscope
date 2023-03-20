@@ -130,7 +130,7 @@ class OfaStylishICPreprocessor(OfaICP):
         cur_style=self.style_dict.get(data[self.STYLE_KEY], "<code_{}>".format(len(self.style_dict))) if self.tokenize_style \
                   else data[self.STYLE_KEY]
         # 教训惨痛, 遂决定添加warning
-        if cur_style=="<unk>":
+        if cur_style=="<code_{}>".format(len(self.style_dict)):
             print("WARNING: Got unknown style token, check orig: {}".format(data[self.STYLE_KEY]))
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
