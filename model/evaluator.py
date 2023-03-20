@@ -1,4 +1,4 @@
-from .utils import generate_preprocessors, cfg_modify_fn
+from .utils import generate_preprocessors
 from .utils.constants import *
 from .utils.build_dataset import generate_train_eval_ds
 from modelscope.trainers import build_trainer
@@ -26,7 +26,7 @@ def start_evaluate(train_conf: dict,
     assert type(trainer)==OFATrainer
     print(trainer.evaluate())
 
-def evaluate(args: argparse.Namespace):
+def evaluate(args: argparse.Namespace, mod_fn: Callable):
     train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
@@ -41,5 +41,4 @@ def evaluate(args: argparse.Namespace):
     # load datasets
     _, eval_ds=generate_train_eval_ds(train_conf, eval=True, remap=remap)
     # modify_function
-    mod_fn=cfg_modify_fn(args.max_epoches, args.batch_size, args.num_workers)
     start_evaluate(train_conf, eval_ds, mod_fn)
