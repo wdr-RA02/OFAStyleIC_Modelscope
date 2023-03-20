@@ -9,8 +9,8 @@
 | BLEU-1  | x.y   |
 | BLEU-4  | x.y   |
 | Rouge-L | x.y   |
-| Spice   | x.y   |
-| CIDEr   | x.y   |
+| CIDEr  | x.y   |
+| SPICE  | x.y   |
 
 如何使用:
 - clone代码, 在代码根目录解压模型
