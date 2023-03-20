@@ -28,4 +28,4 @@ if __name__=="__main__":
 
     elif args.mode=="inference":
         from model.inference_pipeline import inference
-        inference(args, mod_fn)
+        inference(args)
