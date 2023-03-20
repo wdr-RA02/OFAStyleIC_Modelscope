@@ -79,11 +79,14 @@ python3 -m utils.backup_model --conf path_to_conf
 然后就可以在work_dir文件夹下找到包含模型和配置的tar.gz文件
 
 ## utils.backup_model arguments
-| args                         | help                       | default          |
-|------------------------------|----------------------------|------------------|
-| -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
-| -o/--out_dir                 | 指定输出目录                     | ./work_dir       |
+| args                         | help                         | default          |
+|------------------------------|------------------------------|------------------|
+| -c/--conf path/to/train_conf | 指定train configuration json   | *required param* |
+| -o/--out_dir                 | 指定输出目录                       | ./work_dir       |
 | -e/--example_json            | 若使用该参数, 则会保存抹去dataset位置的json | False            |
+| -n/--no_json                 | 若使用该参数, 则打包时会忽略配置json文件      | False            |
+
+> 注意: -e/-n只能二择其一
 
 
 ## Credits
