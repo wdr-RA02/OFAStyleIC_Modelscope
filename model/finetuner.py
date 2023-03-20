@@ -58,7 +58,7 @@ def start_train(trainer,
         print("checkpoint dir: "+ckpt) 
         trainer.train(checkpoint_path=ckpt)
 
-def train(args: argparse.Namespace):
+def train(args: argparse.Namespace, mod_fn: Callable):
     train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
@@ -73,9 +73,6 @@ def train(args: argparse.Namespace):
     }
     # load datasets
     train_ds, _=generate_train_eval_ds(train_conf, train=True, remap=remap)
-    # modify_function
-    mod_fn=cfg_modify_fn(args.max_epoches, args.batch_size, args.num_workers)
-
     trainer=generate_trainer(train_conf, 
                             train_ds, 
                             mod_fn)
