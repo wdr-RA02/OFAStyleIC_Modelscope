@@ -11,7 +11,7 @@ def cfg_modify_fn(max_epoches:int=3,
         # required by p_cap
         # add prompt config
         if prompt is not None:
-            cfg.merge_from_dict({"model.prompt", prompt})
+            cfg.merge_from_dict({"model.prompt": prompt})
         cfg.model.patch_image_size=patch_img_size
         cfg.model.max_image_size=max_img_size
         # config adam begin lr        
