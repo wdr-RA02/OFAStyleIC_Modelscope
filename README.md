@@ -57,13 +57,15 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 ```
 
 ## Model_operator.py arguments
-| args                             | help                       | default             |
-|----------------------------------|-----------------------------|----------------------|
-| -c/--conf path/to/train_conf     | 指定train configuration json | *required param*    |
-| -p/--checkpoint path/to/ckpt     | 从指定的checkpoint开始训练   | None                |
-| -e/--max_epoches N               | 最多训练多少epoch            | 3                   |
-| -b/--batch_size N                | batch大小                    | 4                   |
-| -w/--num workers N               | dataloader worker个数        | 0                   |
+| args                         | help                       | default          |
+|------------------------------|----------------------------|------------------|
+| -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
+| -t/--checkpoint path/to/ckpt | 从指定的checkpoint开始训练         | None             |
+| -e/--max_epoches N           | 最多训练多少epoch                | 3                |
+| -b/--batch_size N            | batch大小                    | 4                |
+| -w/--num workers N           | dataloader worker个数        | 0                |
+| -p/--patch_image_size P      | resnet patch大小             | 224              |
+| -m/--max_image_size M        | resnet max image大小         | 256              |
 
 
 我目前准备使用的模型:
@@ -79,11 +81,14 @@ python3 -m utils.backup_model --conf path_to_conf
 然后就可以在work_dir文件夹下找到包含模型和配置的tar.gz文件
 
 ## utils.backup_model arguments
-| args                         | help                       | default          |
-|------------------------------|----------------------------|------------------|
-| -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
-| -o/--out_dir                 | 指定输出目录                     | ./work_dir       |
+| args                         | help                         | default          |
+|------------------------------|------------------------------|------------------|
+| -c/--conf path/to/train_conf | 指定train configuration json   | *required param* |
+| -o/--out_dir                 | 指定输出目录                       | ./work_dir       |
 | -e/--example_json            | 若使用该参数, 则会保存抹去dataset位置的json | False            |
+| -n/--no_json                 | 若使用该参数, 则打包时会忽略配置json文件      | False            |
+
+> 注意: -e/-n只能二择其一
 
 
 ## Credits

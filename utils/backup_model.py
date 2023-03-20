@@ -63,7 +63,7 @@ def generate_example_conf(train_conf_filename: str):
 def archive_model_dir(model_path: str,
                       train_conf_path: str,
                       out_tar_path: str,
-                      generate_example: bool=False):
+                      mode: int=0):
     '''
     Tar the model output path.
 
@@ -71,24 +71,30 @@ def archive_model_dir(model_path: str,
     model_path: output dir
     train_conf_path: train_conf_dir
     out_tar_name: the tar file path for output
-    generate_example: whether to generate example json, with the dataset paths omitted.
+    mode: int, regarding the saving mode of json, must be one of{"original", "example", "no_save"}(0,1,2)
     '''
     # generate example file first
-    if generate_example:
+    if mode==0:
+        example_path=train_conf_path
+    elif mode==1:
         print("You choose to generate example json config rather than archiving the original file. ")
         example_path=generate_example_conf(train_conf_path)
+    elif mode==2:
+        print("You choose not to backup json file. ")
+        example_path=None
     else:
-        example_path=train_conf_path
+        raise SyntaxError("mode argument is out of range, it must be one of (0,1,2), got{}".format(mode))
     if os.path.exists(os.path.join(model_path, "pytorch_model.bin")):
         with tarfile.open(out_tar_path, "w:gz") as f:
             # add config file and output folder to the archive
             f.add(model_path)
-            f.add(example_path, arcname=train_conf_path)
+            if example_path is not None:
+                f.add(example_path, arcname=train_conf_path)
         print("Model output dir tared to {}".format(out_tar_path))
     else:
         print("Model file does not exist, abort process")
-
-    os.remove(example_path)
+    if mode==1:
+        os.remove(example_path)
 
 def archive_checkpoint():
     # ckpt好像也加载不进来, 就不实现了吧(bushi)
@@ -98,8 +104,9 @@ if __name__=="__main__":
     parser=argparse.ArgumentParser(description="OFA Style model backup script")
     parser.add_argument("--conf", help="train conf file", required=True)
     parser.add_argument("-o", "--out_dir", help="dir to save the tar file", default="./work_dir/")
-    parser.add_argument("-e","--example_json", help="archive example json instead of the original", action="store_true")
-
+    group=parser.add_mutually_exclusive_group()
+    group.add_argument("-e","--example_json", help="archive example json instead of the original", action="store_true")
+    group.add_argument("-n","--no_backup_json", help="don't archive json file", action="store_true")
     args=parser.parse_args()
     # add ./ to the head of the conf file path
     train_conf_dir=args.conf
@@ -107,8 +114,10 @@ if __name__=="__main__":
         train_conf_dir="./"+train_conf_dir
     train_conf=load_train_conf(train_conf_dir)
     current_time=dt.strftime(dt.now(), "%y%m%d-%H%M%S")
-    
     model_path=os.path.join(train_conf["work_dir"], "output")
+
+    mode=(int(args.no_backup_json)<<1)+ int(args.example_json)
+    print(mode)
     # get the tar name and dir
     out_tar_path=os.path.join(args.out_dir, "{}_{}.tar.gz".format(get_tar_name(train_conf_dir), current_time))
     print("Out tar filename: {}".format(out_tar_path))
@@ -116,7 +125,7 @@ if __name__=="__main__":
     archive_model_dir(model_path, 
                       train_conf_dir, 
                       out_tar_path, 
-                      generate_example=args.example_json)
+                      mode=mode)
 
 
 
