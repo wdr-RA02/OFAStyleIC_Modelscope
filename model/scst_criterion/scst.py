@@ -3,11 +3,12 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from modelscope.models.multi_modal import OfaForAllTasks
+from modelscope.utils.config import Config
 from torch.nn.modules.loss import _Loss
 
 
 class SelfCriticalSeqTrainingCriterion(_Loss):
-    def __init__(self) -> None:
+    def __init__(self, cfg:Config) -> None:
         super().__init__()
 
 
