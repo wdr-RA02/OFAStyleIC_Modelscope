@@ -1,3 +1,5 @@
+from time import sleep
+from .scst_criterion import SCSTCriterion
 from .utils import generate_preprocessors
 from .utils.constants import *
 from .utils.build_dataset import generate_train_eval_ds
@@ -34,9 +36,15 @@ def generate_trainer(train_conf: dict,
                                             mod_fn=mod_fn)
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
-
-    # 为保安全加上这条assert
     assert isinstance(trainer, OFATrainer)
+
+    cider_debug=True
+    print("WARNING: CIDEr finetune is under test!!!")
+    sleep(5)
+    if cider_debug:
+        criterion_args=trainer.criterion.args
+        trainer.criterion=SCSTCriterion(criterion_args)
+    
     # froze the resnet
     assert hasattr(trainer, "model") and isinstance(trainer.model, OfaForAllTasks)
     for name, param in trainer.model.named_parameters():
