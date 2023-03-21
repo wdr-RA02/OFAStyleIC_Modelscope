@@ -14,6 +14,8 @@ if __name__=="__main__":
     args=parser.parse_args()
 
     from model.utils.config_modify_fn import cfg_modify_fn
+    from utils import reg_module
+    
     mod_fn=cfg_modify_fn(args.max_epoches, 
                         args.batch_size, 
                         args.num_workers, 
