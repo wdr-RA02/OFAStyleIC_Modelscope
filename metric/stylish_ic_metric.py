@@ -1,9 +1,4 @@
-import os
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.spice.spice import Spice
-from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+from .utils import *
 from modelscope.metrics.base import Metric
 from typing import List, Dict
 
@@ -45,23 +40,16 @@ class ImageCaptionMetric(Metric):
         # squeeze each ele of output["caption"]
         # image tensors, no use at all
         inputs.pop("net_input",None)
-        def pop_empty(inputs: List[str]):
-            new_list=list()
-            for one_str in inputs:
-                if len(one_str.replace(" ","").replace(".",""))>0:
-                    # for each caption C: C->{"caption":c}
-                    new_list.append({"caption":one_str.lower()})
-            return new_list
-        
-        # use filename as image_id
-        image_ids=[os.path.split(k[self.image_text])[-1] for k in inputs[self.sample_text]]
+        dicts=convert_from_dataset(outputs, inputs,
+                                   pred_text=self.pred_text,
+                                   target_text=self.target_text,
+                                   sample_text=self.sample_text,
+                                   image_text=self.image_text)
         # ref:{id: [{"caption":cap}]}
-        self.reference.update({i:caps for i,caps in zip(image_ids,map(pop_empty, outputs[self.pred_text])) \
-                       if len(caps)>0})
+        self.reference.update(dicts[0])
 
         # ground_truth={id: [{"caption":cap_1}, {"caption":cap_2}...]}
-        self.ground_truth.update({i:caps for i,caps in zip(image_ids,map(pop_empty, inputs[self.target_text])) \
-                       if len(caps)>0})
+        self.ground_truth.update(dicts[1])
 
         # print("Input: {}".format(self.ground_truth))
         # print("Outputs: {}".format(self.reference))
