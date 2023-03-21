@@ -1,4 +1,4 @@
-from .utils import generate_preprocessors, cfg_modify_fn
+from .utils import generate_preprocessors
 from .utils.constants import *
 from .utils.build_dataset import generate_train_eval_ds
 from modelscope.trainers import build_trainer
@@ -36,7 +36,7 @@ def generate_trainer(train_conf: dict,
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
 
     # 为保安全加上这条assert
-    assert type(trainer)==OFATrainer
+    assert isinstance(trainer, OFATrainer)
     # froze the resnet
     assert hasattr(trainer, "model") and isinstance(trainer.model, OfaForAllTasks)
     for name, param in trainer.model.named_parameters():

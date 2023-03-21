@@ -1,5 +1,5 @@
 import argparse
-from utils.config_modify_fn import cfg_modify_fn
+from utils.train_conf import load_train_conf
 
 if __name__=="__main__":
     parser=argparse.ArgumentParser(prog="model_operator",description="OFA Style model operator")
@@ -13,11 +13,15 @@ if __name__=="__main__":
     parser.add_argument("-m","--max_image_size", help="patch image size in img embedding, default to 256",type=int, default=256)
     args=parser.parse_args()
 
+    from model.utils.config_modify_fn import cfg_modify_fn
+    from utils import reg_module
+    
     mod_fn=cfg_modify_fn(args.max_epoches, 
                         args.batch_size, 
                         args.num_workers, 
                         patch_img_size=args.patch_image_size, 
-                        max_img_size=args.max_image_size)
+                        max_img_size=args.max_image_size,
+                        prompt=load_train_conf(args.conf).get("prompt", None))
     if args.mode=="train":
         from model.finetuner import train
         train(args, mod_fn)

@@ -259,3 +259,36 @@ reference_ptb={
 1. 本来因为能在preprocessor里面去掉image tensor的, 结果一去性能炸裂, 我也不知道怎么回事, 只好先加上了
 
 2. 我抄, 有个OFAsys的库, 让我有点感觉像小丑
+
+
+### 2023-03-21
+参考了一下OFAmain的SCST实现, 最后感觉有两条路子走:
+
+- 1. Updown方案: 
+  - gen:=ramdom.choice(beam_decoded)
+  - ground_truth=PIC.train_set (halve)
+  - baseline:=tokenizer.batch_decode(softmax(logits, dim=-1))
+
+- 2. OFA方案:
+  - gen:=model.inference()
+  - ground_truth=PIC.test_set (halve)
+  - baseline:=CIDEr_D(me, [other_gts_in_the_batch])
+
+然后还发现我一直找不到的OFAmain: self.task.scst_generator竟然在modelscope.models.multi_modal.ofa.generate.SeqGenerator里面, 并且OfaModelForAllTasks._txt_gen_inference也调用了
+
+gen_out=generate([model], sample):={
+    [
+        [
+            {
+                "tokens": Tensor,
+                "score": Tensor(int),
+                "attention": Tensor,
+                "alignment": Tensor
+            }
+        ]
+    ]
+}
+
+当然我不知道scst_generator是不是还有别的玄机哈, 总而言之我先复现一个updown版本的试试看
+
+我只有一个小小的愿望, 那就是打过GPTSpeaker就行了
