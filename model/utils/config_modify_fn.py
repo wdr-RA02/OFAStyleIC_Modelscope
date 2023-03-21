@@ -1,5 +1,4 @@
-from modelscope.utils.config import Config
-
+# config_modify_function
 def cfg_modify_fn(max_epoches:int=3,
                   batch_size:int=4,
                   num_workers:int=0,
@@ -7,10 +6,10 @@ def cfg_modify_fn(max_epoches:int=3,
                   max_img_size:int=256,
                   prompt:str=None):
 
-    def mod_fn(cfg: Config):
+    def mod_fn(cfg):
         # required by p_cap
         # add prompt config
-        if prompt is not None:
+        if prompt is not None and len!="":
             cfg.merge_from_dict({"model.prompt": prompt})
         cfg.model.patch_image_size=patch_img_size
         cfg.model.max_image_size=max_img_size
