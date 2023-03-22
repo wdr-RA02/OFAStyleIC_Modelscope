@@ -281,3 +281,22 @@ gen_out=generate([model], sample):={
 当然我不知道scst_generator是不是还有别的玄机哈, 总而言之我先复现一个updown版本的试试看
 
 我只有一个小小的愿望, 那就是打过GPTSpeaker就行了
+
+### 2023-03-22
+
+1. 大无语了, 本来想着一个batch里一个个算cider, 结果每个都是0. 难崩.
+
+后来发现要成一个batch输进去才行, 果然道行还是不够深T^T
+
+2. 关于OFAmain中计算scst_loss的一条代码:
+
+```python
+loss=-lprobs.gather(dim=-1, index=target.unsqueeze(-1)).squeeze() ...
+
+```
+
+解释:
+lprob.shape=[b, num_words, vocab_size]
+target.shape=[b, num_words]
+这一条的作用是在lprob中找出target[句子][第i个单词]对应词的概率lprob[句子][第i个单词][target[句子][第i个单词]]
+
