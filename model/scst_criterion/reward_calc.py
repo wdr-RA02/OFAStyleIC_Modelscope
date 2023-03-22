@@ -37,7 +37,7 @@ class RewardCalculator(object):
         
         self.set_ref_and_gts(reference, ground_truth)
         cider=self.calc_cider()
-        
+
         return cider
 
     def convert(self, ref, gts):
@@ -61,6 +61,7 @@ class RewardCalculator(object):
         '''
         ref_batch=self.PTB.tokenize(ref_batch)
         gts_batch=self.PTB.tokenize(gts_batch)
+        # don't do this, or CIDEr will be 0 forever
         # # expand the list to outside, ie: gth=>[{id: caption}]
         # ref_batch=[{id: ref_batch[id]} for id in ref_batch]
         # gts_batch=[{id: gts_batch[id]} for id in gts_batch]
