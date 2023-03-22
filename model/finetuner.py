@@ -43,6 +43,7 @@ def generate_trainer(train_conf: dict,
         train_dataset=train_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
+                                            from_pretrained,
                                             mod_fn=mod_fn)
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
