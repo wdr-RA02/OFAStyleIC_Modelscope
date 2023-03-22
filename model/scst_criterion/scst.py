@@ -107,6 +107,3 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # print(logits.shape)
         return greedy_baseline
     
-    # Step2: generate rewards
-    def calculate_reward(self, gen_res, greedy_res, ground_truth):
-        pass
