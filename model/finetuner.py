@@ -11,7 +11,7 @@ from modelscope.models.multi_modal import OfaForAllTasks
 def generate_trainer(train_conf: dict, 
                      train_ds,
                      mod_fn: Callable,
-                     from_pretrained: bool=False,
+                     from_pretrained: str=None,
                      use_cider: bool=False):
     '''
     生成含有修改的trainer供训练或eval使用
@@ -24,8 +24,9 @@ def generate_trainer(train_conf: dict,
 
     return: trainer
     '''
-    if from_pretrained:
-        model_dir=os.path.join(train_conf["work_dir"],"output")
+    if from_pretrained is not None and isinstance(from_pretrained, str):
+        model_dir=from_pretrained
+        
         print("checkpoint dir: "+model_dir) 
         assert os.path.exists(os.path.join(model_dir, "pytorch_model.bin")), \
             "file pytorch_model.bin not found in {}".format(model_dir)
@@ -66,21 +67,12 @@ def generate_trainer(train_conf: dict,
     
     return trainer
 
-def start_train(trainer, 
-          ckpt: str=None):
-    if ckpt is None:
-        print("No checkpoint, train from scratch.")
-        trainer.train()
-    else:
-        print("checkpoint dir: "+ckpt) 
-        trainer.train()
-
 def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False):
     train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
     work_dir=train_conf["work_dir"]
-    ckpt=args.use_checkpoint
+    ckpt=args.checkpoint
     print("work_dir is: "+work_dir)
 
     remap={
@@ -95,4 +87,4 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
                             mod_fn,
                             use_cider=use_cider_scst,
                             from_pretrained=ckpt)
-    start_train(trainer, ckpt=ckpt)
+    trainer.train()
