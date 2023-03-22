@@ -10,7 +10,8 @@ from modelscope.models.multi_modal import OfaForAllTasks
 
 def generate_trainer(train_conf: dict, 
                      train_ds,
-                     mod_fn: Callable):
+                     mod_fn: Callable,
+                     use_cider: bool=False):
     '''
     生成含有修改的trainer供训练或eval使用
     
@@ -18,6 +19,7 @@ def generate_trainer(train_conf: dict,
     train_conf: train config字典
     train_ds, eval_ds: 数据集
     mod_fn: cfg_modify_fn
+    use_cider: 是否使用scst作为训练任务
 
     return: trainer
     '''
@@ -38,8 +40,7 @@ def generate_trainer(train_conf: dict,
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
     assert isinstance(trainer, OFATrainer)
 
-    cider_debug=False
-    if cider_debug:
+    if use_cider:
         print("WARNING: CIDEr finetune is under test!!!")
         sleep(5)
         criterion_args=trainer.criterion.args
@@ -66,7 +67,7 @@ def start_train(trainer,
         print("checkpoint dir: "+ckpt) 
         trainer.train(checkpoint_path=ckpt)
 
-def train(args: argparse.Namespace, mod_fn: Callable):
+def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False):
     train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
@@ -83,5 +84,6 @@ def train(args: argparse.Namespace, mod_fn: Callable):
     train_ds, _=generate_train_eval_ds(train_conf, train=True, remap=remap)
     trainer=generate_trainer(train_conf, 
                             train_ds, 
-                            mod_fn)
+                            mod_fn,
+                            use_cider=use_cider_scst)
     start_train(trainer, ckpt=ckpt)

@@ -11,6 +11,7 @@ if __name__=="__main__":
     parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)
     parser.add_argument("-p","--patch_image_size", help="patch image size in img embedding, default to 224",type=int, default=224)
     parser.add_argument("-m","--max_image_size", help="patch image size in img embedding, default to 256",type=int, default=256)
+    parser.add_argument("--cider", help="Execute CIDEr SCST finetune (experimental)", action="store_true")
     args=parser.parse_args()
 
     from model.utils.config_modify_fn import cfg_modify_fn
@@ -24,7 +25,7 @@ if __name__=="__main__":
                         prompt=load_train_conf(args.conf).get("prompt", None))
     if args.mode=="train":
         from model.finetuner import train
-        train(args, mod_fn)
+        train(args, mod_fn, use_cider_scst=args.cider)
     
     elif args.mode=="eval":
         from model.evaluator import evaluate
