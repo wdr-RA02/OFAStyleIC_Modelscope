@@ -26,7 +26,6 @@ def generate_trainer(train_conf: dict,
     '''
     if from_pretrained is not None and isinstance(from_pretrained, str):
         model_dir=from_pretrained
-        
         print("checkpoint dir: "+model_dir) 
         assert os.path.exists(os.path.join(model_dir, "pytorch_model.bin")), \
             "file pytorch_model.bin not found in {}".format(model_dir)
