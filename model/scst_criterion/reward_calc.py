@@ -4,11 +4,25 @@ from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 
 class RewardCalculator(object):
-    def __init__(self, eos_token: str="</s>", **kwargs):
-        # reference=sample_sequence   
+    def __init__(self, 
+                 eos_token: str="</s>",
+                 mul_100:bool=False, 
+                 **kwargs):
+        '''
+        基于pycocoevalcap实现的scst reward计算
+        args: 
+        eos_token
+        mul_100: 得到的cider分数是否乘以100
+
+        调用return:
+        score: batch的平均cider
+        scores: list, batch中每一个描述的cider
+        '''
+        # reference=sample_sequence
         self.eos_token = eos_token
         self.PTB=PTBTokenizer()
-        self.cider=Cider() 
+        self.cider=Cider()
+        self.multiply_constant=(1,100)[mul_100]
 
     def set_ref_and_gts(self, 
                         reference: List[str], 
@@ -34,7 +48,16 @@ class RewardCalculator(object):
     def __call__(self, 
                  reference:List[str], 
                  ground_truth:List[str]) -> List[float]:
-        
+        '''
+        基于pycocoevalcap实现的scst reward计算
+        args: 
+        reference: sample得到的序列或greedy decode的序列, 格式为List[str]
+        ground_truth: 从数据集中得到的caption
+
+        调用return:
+        score: batch的平均cider
+        scores: list, batch中每一个描述的cider
+        '''
         self.set_ref_and_gts(reference, ground_truth)
         cider=self.calc_cider()
 
@@ -70,6 +93,6 @@ class RewardCalculator(object):
         #     # cal score separately for each pair in batch
             
         #     scores.append(score)
-        score, _=self.cider.compute_score(gts_batch, ref_batch)
+        score, scores=self.cider.compute_score(gts_batch, ref_batch)
 
-        return score*100
+        return score*self.multiply_constant, scores*self.multiply_constant
