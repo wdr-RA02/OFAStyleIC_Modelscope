@@ -11,6 +11,7 @@ from modelscope.models.multi_modal import OfaForAllTasks
 def generate_trainer(train_conf: dict, 
                      train_ds,
                      mod_fn: Callable,
+                     from_pretrained: bool=False,
                      use_cider: bool=False):
     '''
     生成含有修改的trainer供训练或eval使用
@@ -23,13 +24,20 @@ def generate_trainer(train_conf: dict,
 
     return: trainer
     '''
-    model_name=train_conf["model_name"]
+    if from_pretrained:
+        model_dir=os.path.join(train_conf["work_dir"],"output")
+        print("checkpoint dir: "+model_dir) 
+        assert os.path.exists(os.path.join(model_dir, "pytorch_model.bin")), \
+            "file pytorch_model.bin not found in {}".format(model_dir)
+    else:
+        print("No checkpoint, train from scratch.")
+        model_dir=train_conf["model_name"]
     work_dir=train_conf["work_dir"]
     tokenize=train_conf["tokenize_style"]
     # model_dir = snapshot_download(model_name)
     # set dataset addr
     args = dict(
-        model=model_name, 
+        model=model_dir, 
         model_revision=train_conf["model_revision"],
         work_dir=work_dir, 
         train_dataset=train_ds,
@@ -65,14 +73,14 @@ def start_train(trainer,
         trainer.train()
     else:
         print("checkpoint dir: "+ckpt) 
-        trainer.train(checkpoint_path=ckpt)
+        trainer.train()
 
 def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False):
     train_conf=load_train_conf(args.conf)
     assert isinstance(train_conf, dict)
 
     work_dir=train_conf["work_dir"]
-    ckpt=args.checkpoint
+    ckpt=args.use_checkpoint
     print("work_dir is: "+work_dir)
 
     remap={
@@ -85,5 +93,6 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
     trainer=generate_trainer(train_conf, 
                             train_ds, 
                             mod_fn,
-                            use_cider=use_cider_scst)
+                            use_cider=use_cider_scst,
+                            from_pretrained=ckpt)
     start_train(trainer, ckpt=ckpt)

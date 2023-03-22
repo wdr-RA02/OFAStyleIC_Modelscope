@@ -60,7 +60,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 | args                         | help                       | default          |
 |------------------------------|----------------------------|------------------|
 | -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
-| -t/--checkpoint path/to/ckpt | 从指定的checkpoint开始训练         | None             |
+| -t/--use_checkpoint | 从{work_dir}/output中保存的模型开始训练         | False             |
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                |
 | -b/--batch_size N            | batch大小                    | 4                |
 | -w/--num workers N           | dataloader worker个数        | 0                |
