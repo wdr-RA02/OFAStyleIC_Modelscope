@@ -2,7 +2,6 @@ from metric.utils import pop_empty
 from typing import List
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
-from string import punctuation
 
 class RewardCalculator(object):
     def __init__(self, eos_token: str="</s>", **kwargs):
@@ -37,7 +36,9 @@ class RewardCalculator(object):
                  ground_truth:List[str]) -> List[float]:
         
         self.set_ref_and_gts(reference, ground_truth)
-        return self.calc_cider()
+        cider=self.calc_cider()
+        
+        return cider
 
     def convert(self, ref, gts):
         '''
@@ -60,14 +61,14 @@ class RewardCalculator(object):
         '''
         ref_batch=self.PTB.tokenize(ref_batch)
         gts_batch=self.PTB.tokenize(gts_batch)
-        # expand the list to outside, ie: gth=>[{id: caption}]
-        ref_batch=[{id: ref_batch[id]} for id in ref_batch]
-        gts_batch=[{id: gts_batch[id]} for id in gts_batch]
+        # # expand the list to outside, ie: gth=>[{id: caption}]
+        # ref_batch=[{id: ref_batch[id]} for id in ref_batch]
+        # gts_batch=[{id: gts_batch[id]} for id in gts_batch]
         
-        scores=[]
-        for ref, gts in zip(ref_batch, gts_batch):
-            # cal score separately for each pair in batch
-            score, _=self.cider.compute_score(gts, ref)
-            scores.append((score*100))
-        
-        return scores
+        # for ref, gts in zip(ref_batch, gts_batch):
+        #     # cal score separately for each pair in batch
+            
+        #     scores.append(score)
+        score, _=self.cider.compute_score(gts_batch, ref_batch)
+
+        return score*100
