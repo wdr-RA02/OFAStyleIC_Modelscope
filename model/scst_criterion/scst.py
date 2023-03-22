@@ -33,11 +33,13 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # Step1: generate sample and baseline
         gen_tgt_tokens, gen_tgt_words, \
         baseline_tokens, baseline_words = self.get_sample_from_beams(model, inputs)
-
+        
         # Step2: calculate rewards
+        gt_batch=inputs["labels"]
+        reward_sample=self.reward_calc(gen_tgt_words, gt_batch)
+        baseline_sample=self.reward_calc(baseline_words, gt_batch)
 
-
-
+        
     def get_sample_from_beams(self, model, inputs):
         '''
         从model的inference输出(beam_size个)随机sample一个作为sampled sequence

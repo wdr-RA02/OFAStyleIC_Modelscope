@@ -14,10 +14,10 @@ def pop_empty(inputs: List[str],
     for one_str in inputs:
         if len(one_str.replace(" ","").replace(".",""))>0:
             # for each caption C: C->{"caption":c}
-            transtab = str.maketrans(
-                {key: None for key in punctuation})
-
-            new_list.append({"caption":one_str.translate(transtab).strip(eos_token).strip()})
+            transtab = str.maketrans({key: None for key in punctuation})
+            
+            new_list.append({"caption":one_str.translate(transtab)\
+                             .replace(eos_token, "").strip()})
     return new_list
 
 
