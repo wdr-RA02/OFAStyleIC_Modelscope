@@ -38,10 +38,10 @@ def generate_trainer(train_conf: dict,
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
     assert isinstance(trainer, OFATrainer)
 
-    cider_debug=True
-    print("WARNING: CIDEr finetune is under test!!!")
-    sleep(5)
+    cider_debug=False
     if cider_debug:
+        print("WARNING: CIDEr finetune is under test!!!")
+        sleep(5)
         criterion_args=trainer.criterion.args
         trainer.criterion=SCSTCriterion(criterion_args)
     
