@@ -9,6 +9,8 @@ class ImageCaptionMetric(Metric):
     args:
     pred_text: eval数据集中含有caption的key名字
     target_text: 模型预测输出中含有caption的key名字
+    sample_text: inputs中samples的key名字, 该字段包含原始的输入
+    image_text: inputs["samples"]中图像位置的key名字
     mul_100: 得到的分数是否乘以100
     '''
     def __init__(self, 
@@ -16,7 +18,9 @@ class ImageCaptionMetric(Metric):
                  target_text: str="labels",
                  sample_text: str="samples",
                  image_text: str="image",
-                 mul_100: bool=False
+                 mul_100: bool=False,
+                 eos_token: str="</s>",
+                 pad_token: str="<pad>"
                  ):
         print("Using pycocoeval metric currently. ")
         self.pred_text=pred_text
@@ -35,6 +39,9 @@ class ImageCaptionMetric(Metric):
             ("SPICE", Spice())
         ]
         self.tokenizer=PTBTokenizer()
+        # specify tokens
+        self.eos_token=eos_token
+        self.pad_token=pad_token
 
     def add(self, outputs: Dict, inputs: Dict):
         # squeeze each ele of output["caption"]
@@ -44,7 +51,8 @@ class ImageCaptionMetric(Metric):
                                    pred_text=self.pred_text,
                                    target_text=self.target_text,
                                    sample_text=self.sample_text,
-                                   image_text=self.image_text)
+                                   image_text=self.image_text,
+                                   eos_token=self.eos_token)
         # ref:{id: [{"caption":cap}]}
         self.reference.update(dicts[0])
 
