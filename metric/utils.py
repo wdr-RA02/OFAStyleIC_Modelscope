@@ -44,13 +44,13 @@ def convert_from_dataset(outputs,
     # use filename as image_id
     image_ids=[os.path.split(k[image_text])[-1] for k in inputs[sample_text]]
     # specify eos_token to truncate the end of ground_truth
-    pop_empty=partial(pop_empty, eos_token=eos_token)
+    pop_empty_eos=partial(pop_empty, eos_token=eos_token)
     # ref:{id: [{"caption":cap}]}
-    reference={i:caps for i,caps in zip(image_ids,map(pop_empty, outputs[pred_text])) \
+    reference={i:caps for i,caps in zip(image_ids,map(pop_empty_eos, outputs[pred_text])) \
                     if len(caps)>0}
 
     # ground_truth={id: [{"caption":cap_1}, {"caption":cap_2}...]}
-    ground_truth={i:caps for i,caps in zip(image_ids,map(pop_empty, inputs[target_text])) \
+    ground_truth={i:caps for i,caps in zip(image_ids,map(pop_empty_eos, inputs[target_text])) \
                     if len(caps)>0}
     
     return reference, ground_truth
