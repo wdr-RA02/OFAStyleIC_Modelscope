@@ -15,6 +15,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         self.tokenizer=args.tokenizer
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
+        self.bos_idx=args.tokenizer.bos_token_id
         self.reward_calc=RewardCalculator()
         super().__init__()
 
@@ -24,7 +25,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
             "model required to be OfaForAllTasks type, got {}".format(type(model))
         
         assert id(model.tokenizer)==id(self.tokenizer), \
-            "tokenizers from model and trainer don't match, this is usually unexpected. "
+            "tokenizers from model and trainer don't match, which is usually unexpected. "
         '''
         gen_tgt_tokens: decode后的sampled_sequence [Tensor(n_words) * batch_size]
         gen_tgt_words: sampled_sequence的token  [str * batch_size]
@@ -37,7 +38,13 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # Step2: calculate rewards
         gt_batch=inputs["labels"]
         reward_sample=self.reward_calc(gen_tgt_words, gt_batch)
-        baseline_sample=self.reward_calc(baseline_words, gt_batch)
+        reward_baseline=self.reward_calc(baseline_words, gt_batch)
+
+        # Step3: get gradient
+        # Step3.1: get model output using the sample input
+        model_output, target_tokens=self.get_output_of_model(model, inputs, gen_tgt_tokens)
+
+        # Step3.2: get log probability
 
         
     def get_sample_from_beams(self, model, inputs):
@@ -61,6 +68,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
                                               prefix_tokens=inputs.get(
                                                   'prefix_tokens', None))
             greedy_decode=self.greedy_decode(model, inputs)
+
         gen_target=[]
         gen_res=[]
         greedy_target=[]
@@ -107,3 +115,38 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # print(logits.shape)
         return greedy_baseline
     
+    def get_output_of_model(self, model, inputs, sample_tokens):
+        '''
+        将sample sequence作为encoder input, 得到logits等等输出项
+
+        注: sample_tokens含有eos
+        '''
+
+        model.model.train()
+        batch_size=inputs["nsentences"]
+        net_input=inputs["net_input"]
+
+        # replace net_input["decoder_input_ids"] to that of the sample
+        # insert each token list to new_dec_input_ids[i, :] and pad with padding_idx
+        seq_length=max(v.shape[0] for v in sample_tokens)
+        device=net_input["decoder_input_ids"].device
+        # seq len+1 for bos
+        new_dec_input_ids=torch.full(size=(batch_size, seq_length+1), 
+                                     device=device,
+                                     dtype=torch.int32,
+                                     fill_value=self.padding_idx)
+        new_target=torch.full_like(new_dec_input_ids, fill_value=self.padding_idx)
+
+        # fill bos in the first column
+        new_dec_input_ids[:, 0].fill_(self.bos_idx)
+
+        for i, one_sample_token in enumerate(sample_tokens):
+            # fill in the tokens by line
+            new_dec_input_ids[i, 1:len(one_sample_token)].copy_(one_sample_token[:-1])
+            new_target[i, 0:len(one_sample_token)].copy_(one_sample_token)
+
+
+        net_input.update({"decoder_input_ids": new_dec_input_ids})
+        model_output=model.model(**net_input)
+
+        return new_target, model_output
