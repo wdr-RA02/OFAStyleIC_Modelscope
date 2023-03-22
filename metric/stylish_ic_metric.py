@@ -1,9 +1,4 @@
-import os
-from pycocoevalcap.rouge.rouge import Rouge
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.spice.spice import Spice
-from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+from .utils import *
 from modelscope.metrics.base import Metric
 from typing import List, Dict
 
@@ -14,6 +9,8 @@ class ImageCaptionMetric(Metric):
     args:
     pred_text: eval数据集中含有caption的key名字
     target_text: 模型预测输出中含有caption的key名字
+    sample_text: inputs中samples的key名字, 该字段包含原始的输入
+    image_text: inputs["samples"]中图像位置的key名字
     mul_100: 得到的分数是否乘以100
     '''
     def __init__(self, 
@@ -21,7 +18,9 @@ class ImageCaptionMetric(Metric):
                  target_text: str="labels",
                  sample_text: str="samples",
                  image_text: str="image",
-                 mul_100: bool=False
+                 mul_100: bool=False,
+                 eos_token: str="</s>",
+                 pad_token: str="<pad>"
                  ):
         print("Using pycocoeval metric currently. ")
         self.pred_text=pred_text
@@ -40,28 +39,25 @@ class ImageCaptionMetric(Metric):
             ("SPICE", Spice())
         ]
         self.tokenizer=PTBTokenizer()
+        # specify tokens
+        self.eos_token=eos_token
+        self.pad_token=pad_token
 
     def add(self, outputs: Dict, inputs: Dict):
         # squeeze each ele of output["caption"]
         # image tensors, no use at all
         inputs.pop("net_input",None)
-        def pop_empty(inputs: List[str]):
-            new_list=list()
-            for one_str in inputs:
-                if len(one_str.replace(" ","").replace(".",""))>0:
-                    # for each caption C: C->{"caption":c}
-                    new_list.append({"caption":one_str.lower()})
-            return new_list
-        
-        # use filename as image_id
-        image_ids=[os.path.split(k[self.image_text])[-1] for k in inputs[self.sample_text]]
+        dicts=convert_from_dataset(outputs, inputs,
+                                   pred_text=self.pred_text,
+                                   target_text=self.target_text,
+                                   sample_text=self.sample_text,
+                                   image_text=self.image_text,
+                                   eos_token=self.eos_token)
         # ref:{id: [{"caption":cap}]}
-        self.reference.update({i:caps for i,caps in zip(image_ids,map(pop_empty, outputs[self.pred_text])) \
-                       if len(caps)>0})
+        self.reference.update(dicts[0])
 
         # ground_truth={id: [{"caption":cap_1}, {"caption":cap_2}...]}
-        self.ground_truth.update({i:caps for i,caps in zip(image_ids,map(pop_empty, inputs[self.target_text])) \
-                       if len(caps)>0})
+        self.ground_truth.update(dicts[1])
 
         # print("Input: {}".format(self.ground_truth))
         # print("Outputs: {}".format(self.reference))
