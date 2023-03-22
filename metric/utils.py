@@ -5,6 +5,19 @@ from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.spice.spice import Spice
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
+from string import punctuation
+
+def pop_empty(inputs: List[str]):
+    new_list=list()
+    for one_str in inputs:
+        if len(one_str.replace(" ","").replace(".",""))>0:
+            # for each caption C: C->{"caption":c}
+            transtab = str.maketrans(
+                {key: None for key in punctuation})
+
+            new_list.append({"caption":one_str.translate(transtab).strip()})
+    return new_list
+
 
 def convert_from_dataset(outputs,
                          inputs,
@@ -25,14 +38,6 @@ def convert_from_dataset(outputs,
 
     return: reference, ground_truth
     '''
-    def pop_empty(inputs: List[str]):
-        new_list=list()
-        for one_str in inputs:
-            if len(one_str.replace(" ","").replace(".",""))>0:
-                # for each caption C: C->{"caption":c}
-                new_list.append({"caption":one_str.lower()})
-        return new_list
-
     # use filename as image_id
     image_ids=[os.path.split(k[image_text])[-1] for k in inputs[sample_text]]
     # ref:{id: [{"caption":cap}]}
