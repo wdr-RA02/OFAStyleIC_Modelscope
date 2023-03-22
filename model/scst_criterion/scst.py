@@ -32,19 +32,34 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         gt_words:  decode后的ground truth    [str * batch_size]
         '''
         # Step1: generate sample and baseline
+        self.device=model.model.device
+
         gen_tgt_tokens, gen_tgt_words, \
         baseline_tokens, baseline_words = self.get_sample_from_beams(model, inputs)
         
         # Step2: calculate rewards
         gt_batch=inputs["labels"]
-        reward_sample=self.reward_calc(gen_tgt_words, gt_batch)
-        reward_baseline=self.reward_calc(baseline_words, gt_batch)
+        reward_sample, rewards_sample=self.reward_calc(gen_tgt_words, gt_batch)
+        reward_baseline, rewards_baseline=self.reward_calc(baseline_words, gt_batch)
 
         # Step3: get gradient
         # Step3.1: get model output using the sample input
         model_output, target_tokens=self.get_output_of_model(model, inputs, gen_tgt_tokens)
-
         # Step3.2: get log probability
+        log_prob=self.get_logprob(model_output["logits"])
+        # Step3.3: get loss
+        # can't believe this is a numpy array...
+        scores_batch=torch.asarray(rewards_sample-rewards_baseline, dtype=torch.float32, device=self.device)
+        loss, ntokens=self.calculate_scst_loss(log_prob, scores_batch, target_tokens)
+
+        loss_data=loss.sum()
+        logging_output={
+            "loss": loss_data,
+            "score": scores_batch.sum(),
+            "ntokens": ntokens,
+            "sample_size": ntokens
+        }
+        return loss_data, ntokens, logging_output
 
         
     def get_sample_from_beams(self, model, inputs):
@@ -120,6 +135,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         将sample sequence作为encoder input, 得到logits等等输出项
 
         注: sample_tokens含有eos
+
+        return: 
+        model_output
+        new_target: 含有padding的二维sample_token Tensor, size=[b x max_word]
         '''
 
         model.model.train()
@@ -129,11 +148,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # replace net_input["decoder_input_ids"] to that of the sample
         # insert each token list to new_dec_input_ids[i, :] and pad with padding_idx
         seq_length=max(v.shape[0] for v in sample_tokens)
-        device=net_input["decoder_input_ids"].device
         # seq len+1 for bos
         new_dec_input_ids=torch.full(size=(batch_size, seq_length+1), 
-                                     device=device,
-                                     dtype=torch.int32,
+                                     device=self.device,
+                                     dtype=torch.int64,
                                      fill_value=self.padding_idx)
         new_target=torch.full_like(new_dec_input_ids, fill_value=self.padding_idx)
 
@@ -149,4 +167,44 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         net_input.update({"decoder_input_ids": new_dec_input_ids})
         model_output=model.model(**net_input)
 
-        return new_target, model_output
+        return model_output, new_target
+    
+    def get_logprob(self, logits):
+        '''
+        从模型输出中得到log probability
+
+        args: logits: net_output["logits"]
+
+        return: log probability
+        '''
+        log_prob=F.log_softmax(logits, dim=-1, dtype=torch.float32)
+
+        return log_prob
+
+    
+    def calculate_scst_loss(self, log_prob, scores, target):
+        '''
+        根据scst公式计算loss
+
+        args:
+        log_prob: 使用get_logprob得到的log probability, shape=[b, n, vocab_size]
+        scores: r(w^s)-r(\hat{w}), shape=[b,]
+        target: sample seq的token矩阵, shape=[b,n]
+
+        return:
+        loss: scst loss of the seq
+        ntokens: token的总数目
+        '''
+        assert len(log_prob.shape)==3, \
+            "log_prob is supposed to be [b, n, vocab], got {}".format(log_prob.shape)
+        log_prob_for_each_word=log_prob.gather(dim=-1, index=target.unsqueeze(-1)).squeeze()
+        # 获得的是log p(w_t|h, w_1~w_{t-1}), shape=[b, n:=words_in_seq]
+        # 解释可以见20230322的log
+
+        loss=(-log_prob_for_each_word.sum(dim=-1)*scores)
+        # \nabla=(r(sample)-r(greedy)) \nabla \sigma{log(p(w_t|h, w_t-1))}
+
+        ntokens=target.numel()
+        return loss, ntokens
+
+        
