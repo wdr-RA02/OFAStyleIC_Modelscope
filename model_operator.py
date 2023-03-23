@@ -1,5 +1,4 @@
 import argparse
-from utils.train_conf import load_train_conf
 
 def train_fn(args):
     global mod_fn
@@ -46,14 +45,7 @@ if __name__=="__main__":
 
     args=parser.parse_args()
 
-    from model.utils.config_modify_fn import cfg_modify_fn
-    from utils import reg_module
-    
-    mod_fn=cfg_modify_fn(args.max_epoches, 
-                        args.batch_size, 
-                        args.num_workers, 
-                        patch_img_size=args.patch_image_size, 
-                        max_img_size=args.max_image_size,
-                        prompt=load_train_conf(args.conf).get("prompt", None))
+    from utils import load_train_conf, cfg_modify_fn, reg_module
+    mod_fn=cfg_modify_fn(args, prompt=load_train_conf(args.conf).get("prompt", None))
 
     args.callback(args)
