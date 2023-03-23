@@ -1,6 +1,6 @@
 from functools import partial
 import os
-from typing import List
+from typing import List, Dict, Union
 from pycocoevalcap.rouge.rouge import Rouge
 from pycocoevalcap.bleu.bleu import Bleu
 from pycocoevalcap.cider.cider import Cider
@@ -8,9 +8,16 @@ from pycocoevalcap.spice.spice import Spice
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 from string import punctuation
 
-def pop_empty(inputs: List[str],
-              eos_token="</s>"):
+def pop_empty(inputs: Union[str,List[str]],
+        eos_token="</s>")->List[Dict[str, List]]:
+    '''
+    将List[str]或单条str转换为[{"caption": cap_i}]的形式
+    '''
     new_list=list()
+    if isinstance(inputs,str):
+        inputs=[inputs]
+    assert isinstance(inputs, list), \
+        "inputs expected list or str input, got {}".format(type(inputs))
     for one_str in inputs:
         if len(one_str.replace(" ","").replace(".",""))>0:
             # for each caption C: C->{"caption":c}
