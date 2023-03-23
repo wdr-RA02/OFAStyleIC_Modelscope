@@ -57,15 +57,15 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 ```
 
 ## Model_operator.py arguments
-| args                         | help                       | default          |
-|------------------------------|----------------------------|------------------|
-| -c/--conf path/to/train_conf | 指定train configuration json | *required param* |
-| -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None            |
-| -e/--max_epoches N           | 最多训练多少epoch                | 3                |
-| -b/--batch_size N            | batch大小                    | 4                |
-| -w/--num workers N           | dataloader worker个数        | 0                |
-| -p/--patch_image_size P      | resnet patch大小             | 224              |
-| -m/--max_image_size M        | resnet max image大小         | 256              |
+| args                         | help                       | default          | available in          |
+|------------------------------|----------------------------|------------------|-----------------------|
+| -c/--conf path/to/train_conf | 指定train configuration json | *required param* | ALL                   |
+| -b/--batch_size N            | batch大小                    | 4                | ALL                   |
+| -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
+| -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
+| -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
+| -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
+| -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
 
 
 我目前准备使用的模型:
