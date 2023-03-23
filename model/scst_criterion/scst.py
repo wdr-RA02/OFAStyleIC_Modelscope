@@ -35,7 +35,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         self.device=model.model.device
 
         gen_tgt_tokens, gen_tgt_words, \
-        baseline_tokens, baseline_words = self.get_sample_from_beams(model, inputs)
+        _, baseline_words = self.get_sample_from_beams(model, inputs)
         
         # Step2: calculate rewards
         gt_batch=inputs["labels"]
