@@ -8,8 +8,8 @@ from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.models.multi_modal import OfaForAllTasks
 
-def generate_trainer(train_conf: dict, 
-                     train_ds,
+def generate_trainer(train_conf: Dict[str, str], 
+                     remap: Dict[str, str],
                      mod_fn: Callable,
                      from_pretrained: str=None,
                      use_cider: bool=False):
@@ -18,7 +18,6 @@ def generate_trainer(train_conf: dict,
     
     arg: 
     train_conf: train config字典
-    train_ds, eval_ds: 数据集
     mod_fn: cfg_modify_fn
     use_cider: 是否使用scst作为训练任务
 
@@ -36,6 +35,9 @@ def generate_trainer(train_conf: dict,
     tokenize=train_conf["tokenize_style"]
     # model_dir = snapshot_download(model_name)
     # set dataset addr
+    ds_type=["train", "val"][use_cider]
+    train_ds=generate_ready_ds(train_conf, ds_type=ds_type, remap=remap)
+
     args = dict(
         model=model_dir, 
         model_revision=train_conf["model_revision"],
@@ -81,9 +83,8 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
         "image_hash":"image"
     }
     # load datasets
-    train_ds=generate_ready_ds(train_conf, ds_type="train", remap=remap)
     trainer=generate_trainer(train_conf, 
-                            train_ds, 
+                            remap, 
                             mod_fn,
                             use_cider=use_cider_scst,
                             from_pretrained=ckpt)
