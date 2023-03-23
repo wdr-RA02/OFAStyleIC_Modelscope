@@ -1,5 +1,4 @@
 from .constants import *
-from utils import cfg_modify_fn
 from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
 
 def generate_preprocessors(train_conf: dict,

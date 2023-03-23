@@ -49,8 +49,7 @@ def generate_style_dict(train_conf: dict):
 
 
 # config_modify_function
-def cfg_modify_fn(args,
-                  prompt: str=None):
+def cfg_modify_fn(args):
     # load arguments from args
     max_epoches:int=args.max_epoches if hasattr(args, "max_epoches") else 3
     num_workers:int=args.num_workers if hasattr(args, "num_workers") else 0
@@ -66,6 +65,12 @@ def cfg_modify_fn(args,
             'max_checkpoint_num': 3
     }
     
+    train_conf=load_train_conf(args.conf)
+    prompt=train_conf.get("prompt", None)
+    # save all the logs and anything else to {work_dir}/miscs
+    work_dir=os.path.join(train_conf.get("work_dir"), "miscs")
+    os.makedirs(work_dir, exist_ok=True)
+
     def mod_fn(cfg):
         # required by p_cap
         # add prompt config
@@ -83,6 +88,7 @@ def cfg_modify_fn(args,
             'type': 'IterTimerHook'
         }]
         cfg.train.max_epochs=max_epoches
+        cfg.train.work_dir=work_dir
         # set up batch and workers
         cfg.train.dataloader.batch_size_per_gpu=batch_size
         cfg.train.dataloader.workers_per_gpu=num_workers

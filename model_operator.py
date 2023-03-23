@@ -46,6 +46,6 @@ if __name__=="__main__":
     args=parser.parse_args()
 
     from utils import load_train_conf, cfg_modify_fn, reg_module
-    mod_fn=cfg_modify_fn(args, prompt=load_train_conf(args.conf).get("prompt", None))
+    mod_fn=cfg_modify_fn(args)
 
     args.callback(args)
