@@ -20,7 +20,7 @@ def generate_preprocessors(train_conf: dict,
             "file pytorch_model.bin not found in {}".format(model_dir)
     else:
         print("No checkpoint")
-    model_dir=os.path.join(train_conf["work_dir"], "output")
+        model_dir=os.path.join(train_conf["work_dir"], "output")
     model_dir=model_dir if os.path.exists(os.path.join(model_dir,"pytorch_model.bin")) \
                         else snapshot_download(train_conf["model_name"],
                                 revision=train_conf["model_revision"])
