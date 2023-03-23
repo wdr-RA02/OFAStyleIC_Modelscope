@@ -1,3 +1,5 @@
+from threading import Thread
+from concurrent.futures import ThreadPoolExecutor
 from metric.utils import pop_empty
 from typing import List, Union, Dict, Any
 from pycocoevalcap.cider.cider import Cider
@@ -20,17 +22,18 @@ class RewardCalculator(object):
         '''
         # reference=sample_sequence
         self.eos_token = eos_token
-        self.PTB=PTBTokenizer()
+        self.PTB=PTBTokenizer
         self.cider=Cider()
         self.multiply_constant=(1,100)[mul_100]
 
     OK_LIST_FMT=List[Union[str, List[str]]]   
+
     def get_tokenized_sequence(self,
                                sequence_lst: OK_LIST_FMT):
         
         seq_list=self.convert(sequence_lst)    
         # ground truth only need to be tokenized once
-        seq_batch=self.PTB.tokenize(seq_list)
+        seq_batch=self.PTB().tokenize(seq_list)
 
         return seq_batch
     
@@ -42,8 +45,15 @@ class RewardCalculator(object):
 
         self.ref/self.gts is the tokenized sequence
         '''
-        self.reference, self.ground_truth=list(map(self.get_tokenized_sequence, \
-                                                   (reference, ground_truth)))
+        thPool=ThreadPoolExecutor(max_workers=2)
+        results=[]
+        for seq in reference, ground_truth:
+            results.append(thPool.submit(self.get_tokenized_sequence, seq))
+        
+        # get results from thread pool
+        self.reference=results[0].result()
+        self.ground_truth=results[1].result()
+
         # ground_truth is just ground truth! 
         self.batch_size=len(reference)
         
@@ -99,11 +109,20 @@ class RewardCalculator(object):
             assert len(ref_sampled)==len(ground_truth)==len(ref_baseline), \
                 "size of ref lists and gt list must be identical"
             self.batch_size = len(ref_sampled)
-            # tokenized gts for only once
-            self.ground_truth=self.get_tokenized_sequence(ground_truth)
+            # rewards score
             rewards, reward_lists=list(), list()
+            thPool=ThreadPoolExecutor(max_workers=2)
+            results=[]
+            # tokenized gts for only once          
+            self.ground_truth=self.get_tokenized_sequence(ground_truth)
+
             for reference in ref_sampled, ref_baseline:
-                self.reference=self.get_tokenized_sequence(reference)
+                results.append(thPool.submit(self.get_tokenized_sequence, reference))
+            ref_sampled=results[0].result()
+            ref_baseline=results[1].result()
+
+            for reference in ref_sampled, ref_baseline:
+                self.reference=reference
                 score, scores_=self.calc_absolute_reward()
                 rewards.append(score)
                 reward_lists.append(scores_)
