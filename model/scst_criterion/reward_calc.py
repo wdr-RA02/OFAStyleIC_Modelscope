@@ -53,7 +53,7 @@ class RewardCalculator(object):
         # get results from thread pool
         self.reference=results[0].result()
         self.ground_truth=results[1].result()
-
+        thPool.shutdown()
         # ground_truth is just ground truth! 
         self.batch_size=len(reference)
         
@@ -120,6 +120,7 @@ class RewardCalculator(object):
                 results.append(thPool.submit(self.get_tokenized_sequence, reference))
             ref_sampled=results[0].result()
             ref_baseline=results[1].result()
+            thPool.shutdown()
 
             for reference in ref_sampled, ref_baseline:
                 self.reference=reference
