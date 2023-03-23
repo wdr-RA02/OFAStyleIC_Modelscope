@@ -311,4 +311,3 @@ lprob.shape=[b, num_words, vocab_size]
 target.shape=[b, num_words]
 这一条的作用是在lprob中找出target[句子][第i个单词]对应词的概率lprob[句子][第i个单词][target[句子][第i个单词]]
 
-
