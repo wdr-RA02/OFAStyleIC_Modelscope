@@ -3,6 +3,7 @@
 
 ## Updates
 - 2023-03-19: finetune.py和pre_inference.py已被重构成models.{finetuner, evaluator, inference_pipeline}三个模块, 并由model_operator.py统一调用
+- 2023-03-22: 实验性地加入scst功能(详见func/add_scst分支)
 
 ## How to use
 ### Train:
@@ -63,10 +64,11 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 | -b/--batch_size N            | batch大小                    | 4                | ALL                   |
 | -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
 | -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
+| --cider                      | 是否进行基于cider的scst优化         | undefined        | ``train``             |
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
 | -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
 | -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
-
+> 注意: SCST功能仍是早期版本, 相当不稳定! 
 
 我目前准备使用的模型:
 - damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)
