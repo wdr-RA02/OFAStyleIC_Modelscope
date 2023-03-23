@@ -55,8 +55,8 @@ def cfg_modify_fn(args,
     max_epoches:int=args.max_epoches if hasattr(args, "max_epoches") else 3
     num_workers:int=args.num_workers if hasattr(args, "num_workers") else 0
     batch_size:int=args.batch_size
-    patch_img_size:int=args.patch_img_size
-    max_img_size:int=args.max_img_size
+    patch_img_size:int=args.patch_image_size
+    max_img_size:int=args.max_image_size
 
     def mod_fn(cfg):
         # required by p_cap
