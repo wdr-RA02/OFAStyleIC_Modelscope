@@ -1,10 +1,12 @@
 # config_modify_function
-def cfg_modify_fn(max_epoches:int=3,
-                  batch_size:int=4,
-                  num_workers:int=0,
-                  patch_img_size:int=224,
-                  max_img_size:int=256,
-                  prompt:str=None):
+def cfg_modify_fn(args,
+                  prompt: str=None):
+    # load arguments from args
+    max_epoches:int=args.max_epoches if hasattr(args, "max_epoches") else 3
+    num_workers:int=args.num_workers if hasattr(args, "num_workers") else 0
+    batch_size:int=args.batch_size
+    patch_img_size:int=args.patch_img_size
+    max_img_size:int=args.max_img_size
 
     def mod_fn(cfg):
         # required by p_cap
