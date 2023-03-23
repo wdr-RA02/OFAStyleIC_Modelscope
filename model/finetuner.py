@@ -2,7 +2,7 @@ from time import sleep
 from .scst_criterion import SCSTCriterion
 from .utils import generate_preprocessors
 from .utils.constants import *
-from .utils.build_dataset import generate_train_eval_ds
+from .utils.build_dataset import generate_ready_ds
 from modelscope.trainers import build_trainer
 from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
@@ -81,7 +81,7 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
         "image_hash":"image"
     }
     # load datasets
-    train_ds, _=generate_train_eval_ds(train_conf, train=True, remap=remap)
+    train_ds=generate_ready_ds(train_conf, ds_type="train", remap=remap)
     trainer=generate_trainer(train_conf, 
                             train_ds, 
                             mod_fn,

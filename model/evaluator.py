@@ -1,6 +1,6 @@
 from .utils import generate_preprocessors
 from .utils.constants import *
-from .utils.build_dataset import generate_train_eval_ds
+from .utils.build_dataset import generate_ready_ds
 from modelscope.trainers import build_trainer
 from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
@@ -39,6 +39,6 @@ def evaluate(args: argparse.Namespace, mod_fn: Callable):
         "image_hash":"image"
     }
     # load datasets
-    _, eval_ds=generate_train_eval_ds(train_conf, eval=True, remap=remap)
+    eval_ds=generate_ready_ds(train_conf, ds_type="test", remap=remap)
     # modify_function
     start_evaluate(train_conf, eval_ds, mod_fn)
