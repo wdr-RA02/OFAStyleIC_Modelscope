@@ -57,7 +57,15 @@ def cfg_modify_fn(args,
     batch_size:int=args.batch_size
     patch_img_size:int=args.patch_image_size
     max_img_size:int=args.max_image_size
-
+    # ckpt hook may be changed based on whether scst is adpoted
+    by_epoch: bool=args.cider if hasattr(args, "cider") else False
+    ckpt_hook={
+            'type': 'CheckpointHook',
+            'by_epoch': by_epoch,
+            'interval': [5000,1][by_epoch],
+            'max_checkpoint_num': 3
+    }
+    
     def mod_fn(cfg):
         # required by p_cap
         # add prompt config
@@ -66,12 +74,9 @@ def cfg_modify_fn(args,
         cfg.model.patch_image_size=patch_img_size
         cfg.model.max_image_size=max_img_size
         # config adam begin lr        
-        cfg.train.hooks = [{
-            'type': 'CheckpointHook',
-            'by_epoch': False,
-            'interval': 5000,
-            'max_checkpoint_num': 3
-        }, {
+        cfg.train.hooks = [
+            ckpt_hook, 
+        {
             'type': 'TextLoggerHook',
             'interval': 1
         }, {
