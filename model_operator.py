@@ -4,7 +4,7 @@ from utils.train_conf import load_train_conf
 def train_fn(args):
     global mod_fn
     from model.finetuner import train
-    train(args, mod_fn, use_cider_scst=args.cider)
+    train(args, mod_fn)
 
 def eval_fn(args):
     global mod_fn
