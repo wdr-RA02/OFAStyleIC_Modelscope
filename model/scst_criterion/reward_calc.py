@@ -1,5 +1,5 @@
 from metric.utils import pop_empty
-from typing import List
+from typing import List, Union, Dict, Any
 from pycocoevalcap.cider.cider import Cider
 from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 
@@ -24,75 +24,100 @@ class RewardCalculator(object):
         self.cider=Cider()
         self.multiply_constant=(1,100)[mul_100]
 
+    OK_LIST_FMT=List[Union[str, List[str]]]   
+    def get_tokenized_sequence(self,
+                               sequence_lst: OK_LIST_FMT):
+        
+        seq_list=self.convert(sequence_lst)    
+        # ground truth only need to be tokenized once
+        seq_batch=self.PTB.tokenize(seq_list)
+
+        return seq_batch
+    
     def set_ref_and_gts(self, 
-                        reference: List[str], 
-                        ground_truth: List[str],
-                        eos_token: str=None):
+                        reference: OK_LIST_FMT, 
+                        ground_truth: OK_LIST_FMT):
         '''
         load reference (sampled or greedy_decoded) and ground_truth (inputs["labels"]) here
+
+        self.ref/self.gts is the tokenized sequence
         '''
-        self.reference=reference
+        self.reference, self.ground_truth=list(map(self.get_tokenized_sequence, \
+                                                   (reference, ground_truth)))
         # ground_truth is just ground truth! 
-        self.ground_truth=ground_truth
-        assert len(reference)==len(ground_truth), \
-            "size of ref list and gt list must be identical"
         self.batch_size=len(reference)
-
-        if isinstance(eos_token, str):
-            self.eos_token=eos_token
         
+       
+    def convert(self, ref):
+        '''
+        convert seq to the required format
+        '''
+        ref_out={"img_{}".format(i):pop_empty(cap if isinstance(cap,list) else [cap])\
+                  for i, cap in enumerate(ref)}
         # ref:{id: [{"caption":cap}]}
-        # ground_truth={id: [{"caption":cap_1}, {"caption":cap_2}...]}
+        return ref_out
+    
+    
+    def calc_absolute_reward(self):
+        '''
+        make sure self.reference and self.ground_truth are both tokenized before invoking the fn!
+        '''
+        # don't do this, or CIDEr will be 0 forever
+       
+        # for ref, gts in zip(ref_batch, gts_batch):
+        #     # cal score separately for each pair in batch
+            
+        #     scores.append(score)
+        score, scores=self.cider.compute_score(self.ground_truth, self.reference)
 
-        
+        return score*self.multiply_constant, scores*self.multiply_constant
+
+
     def __call__(self, 
-                 reference:List[str], 
-                 ground_truth:List[str]) -> List[float]:
+                 reference:Union[Dict[str, OK_LIST_FMT], OK_LIST_FMT], 
+                 ground_truth:OK_LIST_FMT,
+                 eos_token: str=None) -> List[float]:
         '''
         基于pycocoevalcap实现的scst reward计算
         args: 
-        reference: sample得到的序列或greedy decode的序列, 格式为List[str]
+        reference: 可从下面二选一: 
+        - sample得到的序列或greedy decode的序列, 格式为List[str]
+        - 将两个序列作为一个字典一起加进来, 格式为``{"sampled": List[str], "greedy": List[str]}``
         ground_truth: 从数据集中得到的caption
+        eos_token: tokenizer使用的eos_token
 
         调用return:
         score: batch的平均cider
         scores: list, batch中每一个描述的cider
         '''
-        self.set_ref_and_gts(reference, ground_truth)
-        cider=self.calc_cider()
+        if isinstance(eos_token, str):
+            self.eos_token=eos_token
+        if isinstance(reference, dict):
+            assert set(reference.keys()) == {"sampled", "greedy"}
+            ref_sampled, ref_baseline=reference["sampled"], reference["greedy"]
+
+            assert len(ref_sampled)==len(ground_truth)==len(ref_baseline), \
+                "size of ref lists and gt list must be identical"
+            self.batch_size = len(ref_sampled)
+            # tokenized gts for only once
+            self.ground_truth=self.get_tokenized_sequence(ground_truth)
+            rewards, reward_lists=list(), list()
+            for reference in ref_sampled, ref_baseline:
+                self.reference=self.get_tokenized_sequence(reference)
+                score, scores_=self.calc_absolute_reward()
+                rewards.append(score)
+                reward_lists.append(scores_)
+            
+            # return the subtraction of the two rewards
+            cider=(rewards[0]-rewards[1], reward_lists[0]-reward_lists[1])
+
+        elif isinstance(reference, list):
+            assert len(reference)==len(ground_truth), \
+                "size of ref list and gt list must be identical"
+            
+            self.set_ref_and_gts(reference, ground_truth)
+            cider=self.calc_absolute_reward()
+        else:
+            raise TypeError("reference expected dict or list, got {}".format(type(reference)))
 
         return cider
-
-    def convert(self, ref, gts):
-        '''
-        convert seq to the required format
-        '''
-        ref_out={"img_{}".format(i):pop_empty([cap])\
-                  for i, cap in enumerate(ref)}
-        
-        gts_out={"img_{}".format(i):pop_empty([cap])\
-            for i, cap in enumerate(gts)}
-        
-        return ref_out, gts_out
-    
-    
-    def calc_cider(self):
-        ref_batch, gts_batch=self.convert(self.reference, self.ground_truth)
-        '''
-        after
-        gth={id:[caption_1]}
-        '''
-        ref_batch=self.PTB.tokenize(ref_batch)
-        gts_batch=self.PTB.tokenize(gts_batch)
-        # don't do this, or CIDEr will be 0 forever
-        # # expand the list to outside, ie: gth=>[{id: caption}]
-        # ref_batch=[{id: ref_batch[id]} for id in ref_batch]
-        # gts_batch=[{id: gts_batch[id]} for id in gts_batch]
-        
-        # for ref, gts in zip(ref_batch, gts_batch):
-        #     # cal score separately for each pair in batch
-            
-        #     scores.append(score)
-        score, scores=self.cider.compute_score(gts_batch, ref_batch)
-
-        return score*self.multiply_constant, scores*self.multiply_constant

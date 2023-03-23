@@ -16,7 +16,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
         self.bos_idx=args.tokenizer.bos_token_id
-        self.reward_calc=RewardCalculator()
+        self.reward_calc=RewardCalculator(eos_token=args.tokenizer.eos_token)
         super().__init__()
 
 
@@ -39,8 +39,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         
         # Step2: calculate rewards
         gt_batch=inputs["labels"]
-        reward_sample, rewards_sample=self.reward_calc(gen_tgt_words, gt_batch)
-        reward_baseline, rewards_baseline=self.reward_calc(baseline_words, gt_batch)
+        # reward_sample, rewards_sample=self.reward_calc(gen_tgt_words, gt_batch)
+        # reward_baseline, rewards_baseline=self.reward_calc(baseline_words, gt_batch)
+        reference={"sampled": gen_tgt_words, "greedy": baseline_words}
+        rel_reward, rel_rewards=self.reward_calc(reference, gt_batch)
 
         # Step3: get gradient
         # Step3.1: get model output using the sample input
@@ -49,13 +51,13 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob=self.get_logprob(model_output["logits"])
         # Step3.3: get loss
         # can't believe this is a numpy array...
-        scores_batch=torch.asarray(rewards_sample-rewards_baseline, dtype=torch.float32, device=self.device)
-        loss, ntokens=self.calculate_scst_loss(log_prob, scores_batch, target_tokens)
+        rel_rewards_=torch.asarray(rel_rewards, device=self.device)
+        loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, target_tokens)
 
         loss_data=loss.sum()
         logging_output={
             "loss": loss_data,
-            "score": scores_batch.sum(),
+            "score": rel_rewards_.sum(),
             "ntokens": ntokens,
             "sample_size": ntokens
         }
@@ -165,6 +167,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
 
 
         net_input.update({"decoder_input_ids": new_dec_input_ids})
+        inputs.update({"target": new_target})
         model_output=model.model(**net_input)
 
         return model_output, new_target
