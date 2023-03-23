@@ -3,6 +3,7 @@
 
 ## Updates
 - 2023-03-19: finetune.py和pre_inference.py已被重构成models.{finetuner, evaluator, inference_pipeline}三个模块, 并由model_operator.py统一调用
+- 2023-03-22: 实验性地加入scst功能(详见func/add_scst分支)
 
 ## How to use
 ### Train:
