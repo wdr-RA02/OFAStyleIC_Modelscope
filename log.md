@@ -300,3 +300,14 @@ lprob.shape=[b, num_words, vocab_size]
 target.shape=[b, num_words]
 这一条的作用是在lprob中找出target[句子][第i个单词]对应词的概率lprob[句子][第i个单词][target[句子][第i个单词]]
 
+
+### 2023-03-23
+今天改了不少东西, 有印象的包括generate_t_e_ds还有model_operator的大改, 还有给rewardcalc加了个线程池(虽然好像也没快多少)
+
+然后嘛就是我用distill训过的模型试跑了一下scst, 结果很有意思啊, cider反到降了,倒是bleu4提到了一个新高度
+
+现在是20:09, 打算再跑它三个epoch试一下
+
+TODO: 
+1. 添加从tar中提取ckpt的功能
+2. 不知道了, 写完SCST真不知道干啥了, 也许搞完鸿鹄那个paas就得开始写故事了
