@@ -41,7 +41,6 @@ def generate_trainer(train_conf: Dict[str, str],
     args = dict(
         model=model_dir, 
         model_revision=train_conf["model_revision"],
-        work_dir=work_dir, 
         train_dataset=train_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,

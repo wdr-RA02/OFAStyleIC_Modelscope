@@ -17,7 +17,6 @@ def start_evaluate(train_conf: dict,
         model_revision=train_conf["model_revision"],
         train_dataset=eval_ds,
         eval_dataset=eval_ds,
-        work_dir=train_conf["work_dir"],
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
                                             mod_fn=mod_fn)
