@@ -1,6 +1,8 @@
 import argparse
 
 def train_fn(args):
+    if args.cider and args.checkpoint is None:
+        raise argparse.ArgumentError("a checkpoint must be specified when using CIDEr finetuning")
     global mod_fn
     from model.finetuner import train
     train(args, mod_fn, use_cider_scst=args.cider)
@@ -45,7 +47,7 @@ if __name__=="__main__":
 
     args=parser.parse_args()
 
-    from utils import load_train_conf, cfg_modify_fn, reg_module
+    from utils import cfg_modify_fn, reg_module
     mod_fn=cfg_modify_fn(args)
 
     args.callback(args)
