@@ -17,7 +17,7 @@ def get_tar_name(dir: str):
     '''
     sep_char="\\" if "\\" in dir else "/"
     dirs=dir.strip(sep_char).split(sep_char)
-    return dirs[-1].strip(".json")
+    return dirs[-1].replace(".json","")
 
 
 def add_attr_to_conf_path(dir: str):
