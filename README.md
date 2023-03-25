@@ -11,6 +11,12 @@ Simple! 只需要在terminal中输入
 ```sh
 CUDA_VISIBLE_DEVICES=x python3 model_operator.py train --conf path/to/conf.json
 ```
+
+若想并卡, 则使用:
+```sh
+CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train --conf path/to/conf.json
+```
+
 然后坐等训完, 训练好的模型会存放在{work_dir}/output里面
 
 ### trainer_conf.json结构
@@ -39,6 +45,12 @@ Also simple!
 ```sh
 CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.json
 ```
+若想并卡, 则使用:
+```sh
+CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train --conf path/to/conf.json
+```
+
+
 
 推理结果保存了一份在{work_dir}/inference_{time}.json里面, 文件结构:
 ```python
