@@ -66,22 +66,24 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 ```
 
 ## Model_operator.py arguments
-| args                         | help                       | default          | available in          |
-|------------------------------|----------------------------|:------------------:|:---------------------:|
+| args                         | help                       | default    | available in          |
+|------------------------------|----------------------------|:----------:|:---------------------:|
 | -c/--conf path/to/train_conf | 指定train configuration json | *required* | ALL                   |
-| -b/--batch_size N            | batch大小                    | 4                | ALL                   |
-| -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
-| -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
-| --cider                      | 是否进行基于cider的scst优化*        | False            | ``train``             |
-| -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
-| -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
-| --lr LR                      | 调整学习率                      | 5e-5             | ``train``             |
-| --lr_end LR_END              | 调整学习率终点                    | 1e-7             | ``train``             |
-| --warm_up W_UP               | 调整warmup rate              | 0.01             | ``train``             |
-| --weight_decay W_DECAY       | 调整weight decay rate        | 0.001            | ``train``             |  |
-| --freeze_resnet              | 训练时是否冻结ResNet              | False            | ``train``             |
-| --log_csv_file CSV_DIR       | 评估时将指标存在CSV_DIR中           | None             | ``eval``              |
-| -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
+| -b/--batch_size N            | batch大小                    | 4          | ALL                   |
+| -p/--patch_image_size P      | resnet patch大小             | 224        | ALL                   |
+| -m/--max_image_size M        | resnet max image大小         | 256        | ALL                   |
+| --cider                      | 是否进行基于cider的scst优化*        | False      | ``train``             |
+| -e/--max_epoches N           | 最多训练多少epoch                | 3          | ``train``             |
+| -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None       | ``train``             |
+| --lr LR                      | 调整学习率                      | 5e-5       | ``train``             |
+| --lr_end LR_END              | 调整学习率终点                    | 1e-7       | ``train``             |
+| --warm_up W_UP               | 调整warmup rate              | 0.01       | ``train``             |
+| --weight_decay W_DECAY       | 调整weight decay rate        | 0.001      | ``train``             |
+| --beam_size                  | 调整beam size                | 5          | ``train``             |
+| --max_len                    | 调整max length               | 16         | ``train``             |
+| --freeze_resnet              | 训练时是否冻结ResNet              | False      | ``train``             |
+| --log_csv_file CSV_DIR       | 评估时将指标存在CSV_DIR中           | None       | ``eval``              |
+| -w/--num workers N           | dataloader worker个数        | 0          | ``train`` && ``eval`` |
 > *1: SCST功能仍是早期版本, 相当不稳定!
 > *2: 使用SCST时必须指定checkpoint 
 

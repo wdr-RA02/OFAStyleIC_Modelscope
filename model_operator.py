@@ -38,6 +38,8 @@ if __name__=="__main__":
     train_parser.add_argument("--lr_end", help="lr_scheduler end, defaults to 1e-7", type=float)
     train_parser.add_argument("--warm_up", help="Adam warm-up rate, defaults to 0.01", type=float)
     train_parser.add_argument("--weight_decay", help="weight decay, defaults to 0.001", type=float)
+    train_parser.add_argument("--max_len", help="max length for beam search, defaults to 16", type=int)
+    train_parser.add_argument("--beam_size", help="beam size for beam search, defaults to 5", type=int)
     train_parser.add_argument("--cider", help="Execute CIDEr SCST finetune (experimental)", action="store_true")
     train_parser.add_argument("--freeze_resnet", help="freeze resnet during training", action="store_true")
     eval_parser=sub_parser.add_parser("eval", help="loads evaluator")
