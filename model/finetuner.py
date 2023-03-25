@@ -32,7 +32,6 @@ def generate_trainer(train_conf: Dict[str, str],
     else:
         print("No checkpoint, train from scratch.")
         model_dir=train_conf["model_name"]
-    work_dir=train_conf["work_dir"]
     tokenize=train_conf["tokenize_style"]
     # model_dir = snapshot_download(model_name)
     # set dataset addr

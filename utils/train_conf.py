@@ -97,9 +97,9 @@ def cfg_modify_fn(args):
         cfg.train.work_dir=train_conf["work_dir"]
         # hyper param
         if max_len is not None:
-            cfg.train.beam_search.max_len_b=max_len
+            cfg.model.beam_search.max_len_b=max_len
         if beam_size is not None:
-            cfg.train.beam_search.beam_size=beam_size
+            cfg.model.beam_search.beam_size=beam_size
         if warm_up is not None:
             cfg.train.lr_scheduler.warmup_proportion=warm_up
         if lr_end is not None:
