@@ -56,7 +56,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
 
         loss_data=loss.sum()
         logging_output={
-            "loss": loss_data,
+            "loss": loss_data.data,
             "score": rel_rewards_.sum(),
             "ntokens": ntokens,
             "sample_size": ntokens
@@ -204,7 +204,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # 获得的是log p(w_t|h, w_1~w_{t-1}), shape=[b, n:=words_in_seq]
         # 解释可以见20230322的log
 
-        loss=(-log_prob_for_each_word.sum(dim=-1)*scores)
+        loss=-log_prob_for_each_word.sum(dim=-1)*scores
         # \nabla=(r(sample)-r(greedy)) \nabla \sigma{log(p(w_t|h, w_t-1))}
 
         ntokens=target.numel()
