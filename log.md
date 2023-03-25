@@ -311,3 +311,13 @@ target.shape=[b, num_words]
 TODO: 
 1. 添加从tar中提取ckpt的功能
 2. 不知道了, 写完SCST真不知道干啥了, 也许搞完鸿鹄那个paas就得开始写故事了
+   
+
+### 2023-03-24
+1. 必须理解, 把work_dir直接加到trainer的参数里面去只会让work_dir变得混杂. 正确的方式是在cfg.train里面加上一行work_dir
+
+2. 几个结论:
+- eval的分数跟eval batch几乎没有关系
+- CIDEr的batch几乎可以肯定是越大越好
+- 提升warmup, 降低lr都是有点用的
+
