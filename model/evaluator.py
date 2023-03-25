@@ -29,7 +29,7 @@ def start_evaluate(train_conf: dict,
     results=trainer.evaluate()
     results={k:round(v*100, 2) for k,v in results.items()}
     print(results)
-    
+
     return results
 
 def result_to_csv(train_conf: dict, 
@@ -57,7 +57,6 @@ def result_to_csv(train_conf: dict,
         lr_end=str(cfg.train.lr_scheduler.lr_end),
         weight_decay=str(cfg.train.optimizer.weight_decay),
     )
-    results={k:round(v*100, 2) for k,v in results.items()}
     # create title bar if not exist
     titles=["eval_time", *params.keys(), *results.keys()]
     csv_exists=os.path.exists(save_csv_filename)
