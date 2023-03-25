@@ -9,14 +9,13 @@
 ## How to use
 ### Train/Eval:
 Simple! 只需要在terminal中输入
-```sh
-CUDA_VISIBLE_DEVICES=x python3 model_operator.py train/eval --conf path/to/conf.json
-```
 
 若想并卡, 则使用:
 ```sh
 CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train/eval --conf path/to/conf.json
 ```
+> **注意, 由于修改了代码, 所以就算是单卡也必须这么运行**
+
 
 然后坐等训完, 训练好的模型会存放在{work_dir}/output里面
 测试指标: BLEU-1, BLEU-4, ROUGE-L, CIDEr, SPICE
@@ -78,6 +77,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
 | -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
 | --lr LR                      | 调整学习率                      | 5e-5             | ``train``             |
+| --lr_end LR_END| 调整学习率终点 | 1e-7|``train``|
 | --warm_up W_UP               | 调整warmup rate              | 0.01             | ``train``             |
 | --weight_decay W_DECAY       | 调整weight decay rate        | 0.001            | ``train``             |  |
 | --freeze_resnet              | 训练时是否冻结ResNet              | False            | ``train``             |

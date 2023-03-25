@@ -57,9 +57,10 @@ def cfg_modify_fn(args):
     patch_img_size:int=args.patch_image_size
     max_img_size:int=args.max_image_size
     # hyper-parameters
-    lr=getattr(args,"lr",5e-5)
-    weight_decay=getattr(args, "weight_decay", 0.001)
-    warm_up=getattr(args,"warm_up", 0.01)
+    lr=getattr(args,"lr",None)
+    lr_end=getattr(args,"lr_end",None)
+    weight_decay=getattr(args, "weight_decay", None)
+    warm_up=getattr(args,"warm_up", None)
 
     # ckpt hook may be changed based on whether scst is adpoted
     by_epoch: bool=args.cider if hasattr(args, "cider") else False
@@ -93,9 +94,14 @@ def cfg_modify_fn(args):
         cfg.train.max_epochs=max_epoches
         cfg.train.work_dir=train_conf["work_dir"]
         # hyper param
-        cfg.train.lr_scheduler.warmup_proportion=warm_up
-        cfg.train.optimizer.lr=lr
-        cfg.train.optimizer.weight_decay=weight_decay
+        if warm_up is not None:
+            cfg.train.lr_scheduler.warmup_proportion=warm_up
+        if lr_end is not None:
+            cfg.train.lr_scheduler.lr_end=lr_end
+        if lr is not None:
+            cfg.train.optimizer.lr=lr
+        if weight_decay is not None:
+            cfg.train.optimizer.weight_decay=weight_decay
         # set up batch and workers
         cfg.train.dataloader.batch_size_per_gpu=batch_size
         cfg.train.dataloader.workers_per_gpu=num_workers
