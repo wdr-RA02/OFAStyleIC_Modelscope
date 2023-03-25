@@ -61,9 +61,11 @@ def cfg_modify_fn(args):
     lr_end=getattr(args,"lr_end",None)
     weight_decay=getattr(args, "weight_decay", None)
     warm_up=getattr(args,"warm_up", None)
+    max_len=getattr(args,"max_len",None)
+    beam_size=getattr(args,"beam_size",None)
 
     # ckpt hook may be changed based on whether scst is adpoted
-    by_epoch: bool=args.cider if hasattr(args, "cider") else False
+    by_epoch: bool=getattr(args,"cider",False)
     ckpt_hook={
             'type': 'CheckpointHook',
             'by_epoch': by_epoch,
@@ -94,6 +96,10 @@ def cfg_modify_fn(args):
         cfg.train.max_epochs=max_epoches
         cfg.train.work_dir=train_conf["work_dir"]
         # hyper param
+        if max_len is not None:
+            cfg.train.beam_search.max_len_b=max_len
+        if beam_size is not None:
+            cfg.train.beam_search.beam_size=beam_size
         if warm_up is not None:
             cfg.train.lr_scheduler.warmup_proportion=warm_up
         if lr_end is not None:
