@@ -352,3 +352,11 @@ TODO:
 - CIDEr的batch几乎可以肯定是越大越好
 - 提升warmup, 降低lr都是有点用的
 
+### 2023-03-25
+bash ./work_dir/scripts/train_step2_standalone.sh 0,2,3
+
+tee既输出又保存
+jq 解析json
+
+保存json的
+eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
