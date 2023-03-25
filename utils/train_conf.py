@@ -51,11 +51,16 @@ def generate_style_dict(train_conf: dict):
 # config_modify_function
 def cfg_modify_fn(args):
     # load arguments from args
-    max_epoches:int=args.max_epoches if hasattr(args, "max_epoches") else 3
-    num_workers:int=args.num_workers if hasattr(args, "num_workers") else 0
+    max_epoches:int=getattr(args, "max_epoches", 3)
+    num_workers:int=getattr(args,"num_workers",0)
     batch_size:int=args.batch_size
     patch_img_size:int=args.patch_image_size
     max_img_size:int=args.max_image_size
+    # hyper-parameters
+    lr=getattr(args,"lr",5e-5)
+    weight_decay=getattr(args, "weight_decay", 0.001)
+    warm_up=getattr(args,"warm_up", 0.01)
+
     # ckpt hook may be changed based on whether scst is adpoted
     by_epoch: bool=args.cider if hasattr(args, "cider") else False
     ckpt_hook={
@@ -63,7 +68,7 @@ def cfg_modify_fn(args):
             'by_epoch': by_epoch,
             'interval': [5000,1][by_epoch],
             'max_checkpoint_num': 3
-    }
+        }
     
     train_conf=load_train_conf(args.conf)
     prompt=train_conf.get("prompt", None)
@@ -87,6 +92,10 @@ def cfg_modify_fn(args):
         }]
         cfg.train.max_epochs=max_epoches
         cfg.train.work_dir=train_conf["work_dir"]
+        # hyper param
+        cfg.train.lr_scheduler.warmup_proportion=warm_up
+        cfg.train.optimizer.lr=lr
+        cfg.train.optimizer.weight_decay=weight_decay
         # set up batch and workers
         cfg.train.dataloader.batch_size_per_gpu=batch_size
         cfg.train.dataloader.workers_per_gpu=num_workers

@@ -59,16 +59,21 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 
 ## Model_operator.py arguments
 | args                         | help                       | default          | available in          |
-|------------------------------|----------------------------|------------------|-----------------------|
+|------------------------------|----------------------------|------------------|:-----------------------:|
 | -c/--conf path/to/train_conf | 指定train configuration json | *required param* | ALL                   |
 | -b/--batch_size N            | batch大小                    | 4                | ALL                   |
 | -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
 | -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
-| --cider                      | 是否进行基于cider的scst优化         | undefined        | ``train``             |
+| --cider                      | 是否进行基于cider的scst优化*        | False            | ``train``             |
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
 | -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
+| --lr LR                      | 调整学习率                      | 5e-5             | ``train``             |
+| --warm_up W_UP               | 调整warmup rate              | 0.01             | ``train``             |
+| --weight_decay W_DECAY       | 调整weight decay rate        | 0.001            | ``train``             |  |
+| --freeze_resnet              | 训练时是否冻结ResNet              | False            | ``train``             |
 | -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
-> 注意: SCST功能仍是早期版本, 相当不稳定! 
+> *1: SCST功能仍是早期版本, 相当不稳定!
+> *2: 使用SCST时必须指定checkpoint 
 
 我目前准备使用的模型:
 - damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)

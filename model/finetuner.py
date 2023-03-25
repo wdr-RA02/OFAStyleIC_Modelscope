@@ -12,6 +12,7 @@ def generate_trainer(train_conf: Dict[str, str],
                      remap: Dict[str, str],
                      mod_fn: Callable,
                      from_pretrained: str=None,
+                     freeze_resnet: bool=False,
                      use_cider: bool=False):
     '''
     生成含有修改的trainer供训练或eval使用
@@ -45,7 +46,8 @@ def generate_trainer(train_conf: Dict[str, str],
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
                                             from_pretrained,
-                                            mod_fn=mod_fn)
+                                            mod_fn=mod_fn),
+        launcher="pytorch"
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
     assert isinstance(trainer, OFATrainer)
@@ -59,7 +61,10 @@ def generate_trainer(train_conf: Dict[str, str],
     # froze the resnet
     assert hasattr(trainer, "model") and isinstance(trainer.model, OfaForAllTasks)
     for name, param in trainer.model.named_parameters():
-        if "embed_images" in name:
+        if freeze_resnet and "embed_images" in name:
+            param.requires_grad=False
+        elif use_cider and "embed_tokens" in name:
+            # freeze embedding layer if use CIDEr
             param.requires_grad=False
 
     if tokenize:
@@ -85,6 +90,7 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
     trainer=generate_trainer(train_conf, 
                             remap, 
                             mod_fn,
+                            freeze_resnet=args.freeze_resnet,
                             use_cider=use_cider_scst,
                             from_pretrained=ckpt)
     trainer.train()

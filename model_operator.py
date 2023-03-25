@@ -34,8 +34,11 @@ if __name__=="__main__":
     train_parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)
     train_parser.add_argument("-t", "--checkpoint", help="checkpoint", type=str)
     train_parser.add_argument("-e", "--max_epoches", help="max epoch", type=int, default=3)
+    train_parser.add_argument("--lr", help="Adam learning rate, defaults to 5e-5", type=float, default=5e-5)
+    train_parser.add_argument("--warm_up", help="Adam warm-up rate, defaults to 0.01", type=float, default=0.05)
+    train_parser.add_argument("--weight_decay", help="weight decay, defaults to 0.001", type=float, default=0.001)
     train_parser.add_argument("--cider", help="Execute CIDEr SCST finetune (experimental)", action="store_true")
-
+    train_parser.add_argument("--freeze_resnet", help="freeze resnet during training", action="store_true")
     eval_parser=sub_parser.add_parser("eval", help="loads evaluator")
     eval_parser.set_defaults(callback=eval_fn)
     add_common_args(eval_parser)
