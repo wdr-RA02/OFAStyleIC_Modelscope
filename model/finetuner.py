@@ -2,23 +2,23 @@ from time import sleep
 from .scst_criterion import SCSTCriterion
 from .utils import generate_preprocessors
 from .utils.constants import *
-from .utils.build_dataset import generate_train_eval_ds
+from .utils.build_dataset import generate_ready_ds
 from modelscope.trainers import build_trainer
 from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
 from modelscope.models.multi_modal import OfaForAllTasks
 
-def generate_trainer(train_conf: dict, 
-                     train_ds,
+def generate_trainer(train_conf: Dict[str, str], 
+                     remap: Dict[str, str],
                      mod_fn: Callable,
                      from_pretrained: str=None,
+                     freeze_resnet: bool=False,
                      use_cider: bool=False):
     '''
     生成含有修改的trainer供训练或eval使用
     
     arg: 
     train_conf: train config字典
-    train_ds, eval_ds: 数据集
     mod_fn: cfg_modify_fn
     use_cider: 是否使用scst作为训练任务
 
@@ -36,15 +36,18 @@ def generate_trainer(train_conf: dict,
     tokenize=train_conf["tokenize_style"]
     # model_dir = snapshot_download(model_name)
     # set dataset addr
+    ds_type=["train", "val"][use_cider]
+    train_ds=generate_ready_ds(train_conf, ds_type=ds_type, remap=remap)
+
     args = dict(
         model=model_dir, 
         model_revision=train_conf["model_revision"],
-        work_dir=work_dir, 
         train_dataset=train_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
                                             from_pretrained,
-                                            mod_fn=mod_fn)
+                                            mod_fn=mod_fn),
+        launcher="pytorch"
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
     assert isinstance(trainer, OFATrainer)
@@ -58,7 +61,10 @@ def generate_trainer(train_conf: dict,
     # froze the resnet
     assert hasattr(trainer, "model") and isinstance(trainer.model, OfaForAllTasks)
     for name, param in trainer.model.named_parameters():
-        if "embed_images" in name:
+        if freeze_resnet and "embed_images" in name:
+            param.requires_grad=False
+        elif use_cider and "embed_tokens" in name:
+            # freeze embedding layer if use CIDEr
             param.requires_grad=False
 
     if tokenize:
@@ -81,10 +87,10 @@ def train(args: argparse.Namespace, mod_fn: Callable, use_cider_scst: bool=False
         "image_hash":"image"
     }
     # load datasets
-    train_ds, _=generate_train_eval_ds(train_conf, train=True, remap=remap)
     trainer=generate_trainer(train_conf, 
-                            train_ds, 
+                            remap, 
                             mod_fn,
+                            freeze_resnet=args.freeze_resnet,
                             use_cider=use_cider_scst,
                             from_pretrained=ckpt)
     trainer.train()

@@ -4,14 +4,23 @@
 ## Updates
 - 2023-03-19: finetune.py和pre_inference.py已被重构成models.{finetuner, evaluator, inference_pipeline}三个模块, 并由model_operator.py统一调用
 - 2023-03-22: 实验性地加入scst功能(详见func/add_scst分支)
+- 2023-03-25: 删除func/tokenized_style分支, main分支由func/add_scst传入
 
 ## How to use
-### Train:
+### Train/Eval:
 Simple! 只需要在terminal中输入
 ```sh
-CUDA_VISIBLE_DEVICES=x python3 model_operator.py train --conf path/to/conf.json
+CUDA_VISIBLE_DEVICES=x python3 model_operator.py train/eval --conf path/to/conf.json
 ```
+
+若想并卡, 则使用:
+```sh
+CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train/eval --conf path/to/conf.json
+```
+
 然后坐等训完, 训练好的模型会存放在{work_dir}/output里面
+测试指标: BLEU-1, BLEU-4, ROUGE-L, CIDEr, SPICE
+
 
 ### trainer_conf.json结构
 ```py
@@ -26,7 +35,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py train --conf path/to/conf.json
     "test_json":"test.json",
     "val_json":"val.json",
     "work_dir":"path_to_work_dir/",
-    "prompt":"" #目前还没实现这个功能
+    "prompt":带{}的prompt, 不指定的话填null/""
 }
 ```
 我提供了几个配置例子:
@@ -39,6 +48,7 @@ Also simple!
 ```sh
 CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.json
 ```
+
 
 推理结果保存了一份在{work_dir}/inference_{time}.json里面, 文件结构:
 ```python
@@ -59,15 +69,21 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 
 ## Model_operator.py arguments
 | args                         | help                       | default          | available in          |
-|------------------------------|----------------------------|------------------|-----------------------|
+|------------------------------|----------------------------|------------------|:-----------------------:|
 | -c/--conf path/to/train_conf | 指定train configuration json | *required param* | ALL                   |
 | -b/--batch_size N            | batch大小                    | 4                | ALL                   |
 | -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
 | -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
+| --cider                      | 是否进行基于cider的scst优化*        | False            | ``train``             |
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
 | -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
+| --lr LR                      | 调整学习率                      | 5e-5             | ``train``             |
+| --warm_up W_UP               | 调整warmup rate              | 0.01             | ``train``             |
+| --weight_decay W_DECAY       | 调整weight decay rate        | 0.001            | ``train``             |  |
+| --freeze_resnet              | 训练时是否冻结ResNet              | False            | ``train``             |
 | -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
-
+> *1: SCST功能仍是早期版本, 相当不稳定!
+> *2: 使用SCST时必须指定checkpoint 
 
 我目前准备使用的模型:
 - damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)

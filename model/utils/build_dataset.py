@@ -37,36 +37,31 @@ def generate_msdataset(ds_path: str,
 
     return ds
 
-def generate_train_eval_ds(train_conf: dict,
-                           train: bool=False,
-                           eval: bool=False,
-                           remap: dict=None):
+def generate_ready_ds(train_conf: dict,
+                      ds_type: str,
+                      remap: dict=None):
     '''
     生成hf格式的数据集
 
     args: train_conf: 训练配置文件
+    ds_type: 数据集的种类, 必须是["train", "val", "test"]三者之一
     remap: 重映射dict
 
     return: train_ds, eval_ds
     '''
+    assert ds_type.lower() in ["train", "val", "test"], \
+        "Dataset must be one of ['train', 'val', 'test'], got {}".format(ds_type)
+    
+    ds_type=ds_type.lower()+"_json"
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
     collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
-    train_ds, eval_ds=None, None
     # generate dataset according to needs
-    if train:
-        train_ds = generate_msdataset(dataset_path,
-                                    train_conf["train_json"],
-                                    remap)
-        train_ds = train_ds.map(collate_fn)
-    if eval:
-        eval_ds = generate_msdataset(dataset_path, 
-                                    train_conf["test_json"],
-                                    remap)
-
-        eval_ds = eval_ds.map(collate_fn)
-
-    return train_ds, eval_ds
+    hf_ds = generate_msdataset(dataset_path,
+                                train_conf[ds_type],
+                                remap)
+    hf_ds = hf_ds.map(collate_fn)
+    return hf_ds
 
 def collate_pcaption_dataset(data, dataset_dir: str, file_attr: str=".jpg"):
     '''
