@@ -42,6 +42,7 @@ if __name__=="__main__":
     train_parser.add_argument("--freeze_resnet", help="freeze resnet during training", action="store_true")
     eval_parser=sub_parser.add_parser("eval", help="loads evaluator")
     eval_parser.set_defaults(callback=eval_fn)
+    eval_parser.add_argument("-l","--log_csv_file",help="where to save the csv file with eval results", type=str)
     add_common_args(eval_parser)
 
     eval_parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)

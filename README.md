@@ -67,8 +67,8 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 
 ## Model_operator.py arguments
 | args                         | help                       | default          | available in          |
-|------------------------------|----------------------------|------------------|:-----------------------:|
-| -c/--conf path/to/train_conf | 指定train configuration json | *required param* | ALL                   |
+|------------------------------|----------------------------|:------------------:|:---------------------:|
+| -c/--conf path/to/train_conf | 指定train configuration json | *required* | ALL                   |
 | -b/--batch_size N            | batch大小                    | 4                | ALL                   |
 | -p/--patch_image_size P      | resnet patch大小             | 224              | ALL                   |
 | -m/--max_image_size M        | resnet max image大小         | 256              | ALL                   |
@@ -76,10 +76,11 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.j
 | -e/--max_epoches N           | 最多训练多少epoch                | 3                | ``train``             |
 | -t/--checkpoint path/to/ckpt | 指定ckpt目录                   | None             | ``train``             |
 | --lr LR                      | 调整学习率                      | 5e-5             | ``train``             |
-| --lr_end LR_END| 调整学习率终点 | 1e-7|``train``|
+| --lr_end LR_END              | 调整学习率终点                    | 1e-7             | ``train``             |
 | --warm_up W_UP               | 调整warmup rate              | 0.01             | ``train``             |
 | --weight_decay W_DECAY       | 调整weight decay rate        | 0.001            | ``train``             |  |
 | --freeze_resnet              | 训练时是否冻结ResNet              | False            | ``train``             |
+| --log_csv_file CSV_DIR       | 评估时将指标存在CSV_DIR中           | None             | ``eval``              |
 | -w/--num workers N           | dataloader worker个数        | 0                | ``train`` && ``eval`` |
 > *1: SCST功能仍是早期版本, 相当不稳定!
 > *2: 使用SCST时必须指定checkpoint 
@@ -98,8 +99,8 @@ python3 -m utils.backup_model --conf path_to_conf
 
 ## utils.backup_model arguments
 | args                         | help                         | default          |
-|------------------------------|------------------------------|------------------|
-| -c/--conf path/to/train_conf | 指定train configuration json   | *required param* |
+|------------------------------|------------------------------|:------------------:|
+| -c/--conf path/to/train_conf | 指定train configuration json   | *required* |
 | -o/--out_dir                 | 指定输出目录                       | ./work_dir       |
 | -e/--example_json            | 若使用该参数, 则会保存抹去dataset位置的json | False            |
 | -n/--no_json                 | 若使用该参数, 则打包时会忽略配置json文件      | False            |
