@@ -6,18 +6,20 @@
 - 2023-03-22: 实验性地加入scst功能(详见func/add_scst分支)
 
 ## How to use
-### Train:
+### Train/Eval:
 Simple! 只需要在terminal中输入
 ```sh
-CUDA_VISIBLE_DEVICES=x python3 model_operator.py train --conf path/to/conf.json
+CUDA_VISIBLE_DEVICES=x python3 model_operator.py train/eval --conf path/to/conf.json
 ```
 
 若想并卡, 则使用:
 ```sh
-CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train --conf path/to/conf.json
+CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train/eval --conf path/to/conf.json
 ```
 
 然后坐等训完, 训练好的模型会存放在{work_dir}/output里面
+测试指标: BLEU-1, BLEU-4, ROUGE-L, CIDEr, SPICE
+
 
 ### trainer_conf.json结构
 ```py
@@ -32,7 +34,7 @@ CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train
     "test_json":"test.json",
     "val_json":"val.json",
     "work_dir":"path_to_work_dir/",
-    "prompt":"" #目前还没实现这个功能
+    "prompt":带{}的prompt, 不指定的话填null/""
 }
 ```
 我提供了几个配置例子:
@@ -45,11 +47,6 @@ Also simple!
 ```sh
 CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference --conf path/to/conf.json
 ```
-若想并卡, 则使用:
-```sh
-CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train --conf path/to/conf.json
-```
-
 
 
 推理结果保存了一份在{work_dir}/inference_{time}.json里面, 文件结构:
