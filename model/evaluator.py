@@ -27,7 +27,7 @@ def start_evaluate(train_conf: dict,
     trainer=build_trainer(name=Trainers.ofa, default_args=args)
     assert type(trainer)==OFATrainer
     results=trainer.evaluate()
-    results={k:"{.2f}".format(round(v*100)) for k,v in results.items()}
+    results={k:"{:.2f}".format(round(v*100,3)) for k,v in results.items()}
     print(results)
 
     return results
