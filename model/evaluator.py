@@ -27,7 +27,7 @@ def start_evaluate(train_conf: dict,
     trainer=build_trainer(name=Trainers.ofa, default_args=args)
     assert type(trainer)==OFATrainer
     results=trainer.evaluate()
-    results={k:round(v*100, 2) for k,v in results.items()}
+    results={k:"{.2f}".format(round(v*100)) for k,v in results.items()}
     print(results)
 
     return results
@@ -52,6 +52,8 @@ def result_to_csv(train_conf: dict,
     cfg=Config.from_file(json_dir)
     # get necessary args
     params=dict(
+        work_dir=train_conf["work_dir"],
+        epoches=str(cfg.train.max_epochs),
         warm_up=str(cfg.train.lr_scheduler.warmup_proportion),
         lr=str(cfg.train.optimizer.lr),
         lr_end=str(cfg.train.lr_scheduler.lr_end),
