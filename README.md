@@ -5,6 +5,18 @@
 - 2023-03-19: finetune.py和pre_inference.py已被重构成models.{finetuner, evaluator, inference_pipeline}三个模块, 并由model_operator.py统一调用
 - 2023-03-22: 实验性地加入scst功能(详见func/add_scst分支)
 - 2023-03-25: 删除func/tokenized_style分支, main分支由func/add_scst传入
+- 2023-03-26: 添加环境配置章节
+
+## Env setup
+这里推荐使用conda
+```sh
+conda create -n myenv python=3.8.5
+conda activate myenv
+
+conda install jq
+conda install pytorch==1.12.1 torchaudio==0.12.1 torchvision==0.13.1 cudatoolkit=10.2 -c pytorch
+pip3 install -r requirements.txt
+```
 
 ## How to use
 ### Train/Eval:
