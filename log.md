@@ -360,3 +360,14 @@ jq 解析json
 
 保存json的
 eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
+
+编写自动化训练shell的艰辛困苦!
+
+今天学到的shell知识, 包括但不限于:
+1. 赋值最好用`echo xxx`
+2. 函数的返回不是return而是echo
+3. awk -F, '{print NF}'是统计列数的
+4. 浮点数比较要这样: `echo $a > $b | bc`
+5. 其他的还在想
+
+目前用base_pt半小时出一波结果, 等明天看看哪个最好, 然后我再训出一个不错的底子就算了
