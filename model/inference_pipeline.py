@@ -15,8 +15,9 @@ def get_eval_batch(train_conf: dict,
     return out_data
 
 
-def start_inference(train_conf: dict,
-                   data: List[Dict[str,str]]):
+def start_inference_from_eval(train_conf: dict,
+                   data: List[Dict[str,str]],
+                   mod_fn: Callable):
     '''
     data: ["style", "image", "text"]
     '''
@@ -28,7 +29,7 @@ def start_inference(train_conf: dict,
     orig_text=list(map(lambda x:{"reference":x.pop("text")},data))
 
     # define preprocessor and model
-    preprocessor=OfaPreprocessorforStylishIC(model_dir=model_dir)
+    preprocessor=OfaPreprocessorforStylishIC(model_dir=model_dir, cfg_modify_fn=mod_fn)
     if tokenize:
         style_dict=generate_style_dict(train_conf)
         assert isinstance(style_dict, dict)
@@ -51,8 +52,39 @@ def start_inference(train_conf: dict,
         })
     return result
 
+def save_results_to_json(train_conf: Dict[str, str],
+                         result: Dict[str, Any],
+                         description: str=None,
+                         output_dir: str=None):
+    '''
+    将result保存到{work_dir}/inference_{dt}.json中,
+    包含: model_name, result{image_path, caption, reference}
+    
+    args:
+    train_conf: 训练配置
+    result: 推理结果
+    description: 保存到model_name字段的内容
+    output_dir: 推理结果json保存位置
+    '''
+    name=description if description is not None else train_conf["model_name"]
+    result={
+        "model_name": name,
+        "model_revision": train_conf["model_revision"],
+        "results":result
+    }
+    # save result to work_dir
+    result_filename="inference_{}.json".format(dt.strftime(dt.now(), "%y%m%d-%H%M%S"))
+    if output_dir is None:
+        output_dir=train_conf["work_dir"]
+    else:
+        os.makedirs(output_dir, exist_ok=True)
+    result_filename=os.path.join(output_dir, result_filename)
+    with open(result_filename, "w") as f:
+        json.dump(result, f, indent=4)
+    print("Inference also saved to {}".format(result_filename))
 
-def inference(args: argparse.Namespace):
+
+def inference(args: argparse.Namespace, mod_fn):
     train_conf=load_train_conf(args.conf)
 
     # load eval dataset\
@@ -64,22 +96,16 @@ def inference(args: argparse.Namespace):
     eval_ds=generate_msdataset(ds_path=train_conf["dataset_path"], 
                                json_name=train_conf["val_json"],
                                remap_dict=remap)
+    if args.random:
     # randomly select 10 samples from val set
-    batches=random.choices(eval_ds, k=args.batch_size)
+        batches=random.choices(eval_ds, k=args.batch_size)
     # style_dict
-    data=get_eval_batch(train_conf, batches)
-    result=start_inference(train_conf, data)
+        data=get_eval_batch(train_conf, batches)
+    else:
+        raise NotImplementedError("inference json load is under construction")
+    result=start_inference_from_eval(train_conf, data, mod_fn)
     print(*result)
-    # add model info
-    result={
-        "model_name": train_conf["model_name"],
-        "model_revision": train_conf["model_revision"],
-        "n_eval_sample": args.batch_size,
-        "results":result
-    }
-    # save result to work_dir
-    result_filename="inference_{}.json".format(dt.strftime(dt.now(), "%y%m%d-%H%M%S"))
-    result_filename=os.path.join(train_conf["work_dir"], result_filename)
-    with open(result_filename, "w") as f:
-        json.dump(result, f, indent=4)
-    print("Inference also saved to {}".format(result_filename))
+    # save model info to json file
+    save_results_to_json(train_conf, result,
+                         description=getattr(args, "description", None),
+                         output_dir=getattr(args, "out_dir", None))
