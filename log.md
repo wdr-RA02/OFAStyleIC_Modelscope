@@ -336,7 +336,23 @@ eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
 1. 赋值最好用`echo xxx`
 2. 函数的返回不是return而是echo
 3. awk -F, '{print NF}'是统计列数的
-4. 浮点数比较要这样: `echo $a > $b | bc`
-5. 其他的还在想
+4. awk中NR>1可以略过第一行 (之后要好好学awk啊)
+5. 浮点数比较要这样: `echo $a > $b | bc`
+6. getattr(item, attr, default)的实现方式:
+``value=${VAR:-default_value}``
 
 目前用base_pt半小时出一波结果, 等明天看看哪个最好, 然后我再训出一个不错的底子就算了
+
+### 2023-03-27
+
+挂了三十多次模型, 发现cider的sweet spot如下(base):
+- **warm_up=0.06** (可以实锤)
+- lr=2e-5/2.5e-5
+- lr_end=7.5e-5  (还有待进一步验证)
+- weight_decay=0.001 (基本上不能再大了, 感觉甚至可以往小了试)
+- batch=24, worker=8 (此时占用7.3G左右显存)
+- epoch=3
+
+这一套下来CIDEr可以提升0.8左右
+
+为什么说lrend有待验证呢? 因为我试过把epoch往上调, 结果还是往上走的, 所以我觉得现有的这一组还没有走到头. 但是我觉得还是可以先记录一下吧

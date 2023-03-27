@@ -13,8 +13,9 @@ def eval_fn(args):
     evaluate(args, mod_fn)
 
 def inference_fn(args):
+    global mod_fn
     from model.inference_pipeline import inference
-    inference(args)
+    inference(args, mod_fn)
 
 def add_common_args(subparser):
     # add commom parsers
@@ -43,15 +44,24 @@ if __name__=="__main__":
     train_parser.add_argument("--cider", help="Execute CIDEr SCST finetune (experimental)", action="store_true")
     train_parser.add_argument("--freeze_resnet", help="freeze resnet during training", action="store_true")
     eval_parser=sub_parser.add_parser("eval", help="loads evaluator")
+
     eval_parser.set_defaults(callback=eval_fn)
     eval_parser.add_argument("-l","--log_csv_file",help="where to save the csv file with eval results", type=str)
     add_common_args(eval_parser)
-
     eval_parser.add_argument("-w","--num_workers", help="num of dataloader", type=int, default=0)
+
     inference_parser=sub_parser.add_parser("inference", help="loads inference_pipeline")
     inference_parser.set_defaults(callback=inference_fn)
     add_common_args(inference_parser)
-
+    # -r and -j will be conflict
+    infr_group=inference_parser.add_mutually_exclusive_group(required=True)
+    infr_group.add_argument("-r", "--random", help="Randomly select samples from eval set",action="store_true")
+    infr_group.add_argument("-j", "--inference_json", help="Extract items to be inferenced from json file", type=str)
+    inference_parser.add_argument("-d", "--description", help="Description that will be written in result json \
+                                  rather than base model name", type=str)
+    inference_parser.add_argument("-o", "--output_dir", help="specify the place to output inference result json \
+                                  rather than \{work_dir\}",type=str)
+    
     args=parser.parse_args()
 
     from utils import cfg_modify_fn, reg_module
