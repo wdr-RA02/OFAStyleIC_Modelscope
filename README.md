@@ -21,11 +21,12 @@ pip3 install -r requirements.txt
 
 ## How to use
 ### Train/Eval:
-Simple! 只需要在terminal中输入
-
 若想并卡, 则使用:
 ```sh
-CUDA_VISIBLE_DEVICES=x,y,... torchrun --nproc_per_node N model_operator.py train/eval --conf path/to/conf.json
+CUDA_VISIBLE_DEVICES=x,y,... torchrun --rdzv_backend c10d \
+        --rdzv_endpoint localhost:30000 \
+        --nnodes 1 --nproc_per_node N \ 
+        model_operator.py train/eval --conf path/to/conf.json ...
 ```
 > **注意, 由于修改了代码, 所以就算是单卡也必须这么运行**
 
