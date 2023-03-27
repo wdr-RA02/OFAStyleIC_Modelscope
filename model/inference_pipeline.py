@@ -1,6 +1,8 @@
 import random
 from datetime import datetime as dt
 from modelscope.pipelines import pipeline
+
+from metric import stylish_ic_metric
 from .utils.constants import *
 from .utils.build_dataset import generate_msdataset, collate_pcaption_dataset
 from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
@@ -15,20 +17,10 @@ def get_eval_batch(train_conf: dict,
     return out_data
 
 
-def start_inference_from_eval(train_conf: dict,
-                   data: List[Dict[str,str]],
-                   mod_fn: Callable):
-    '''
-    data: ["style", "image", "text"]
-    '''
-    # model_dir = snapshot_download(model_name)
+def generate_infr_pipeline(train_conf: Dict[str, str], 
+                           mod_fn: Callable):
     model_dir=os.path.join(train_conf["work_dir"], "output")
     tokenize=train_conf["tokenize_style"]
-
-    # save ground truth and pop it for the pipeline
-    orig_text=list(map(lambda x:{"reference":x.pop("text")},data))
-
-    # define preprocessor and model
     preprocessor=OfaPreprocessorforStylishIC(model_dir=model_dir, cfg_modify_fn=mod_fn)
     if tokenize:
         style_dict=generate_style_dict(train_conf)
@@ -39,16 +31,53 @@ def start_inference_from_eval(train_conf: dict,
     stylish_ic=pipeline(Tasks.image_captioning, 
                         model=model_dir, 
                         preprocessor=preprocessor)
-    
+
+
+def start_inference_from_json(train_conf: Dict[str,str],
+                              json_file: str, 
+                              mod_fn: Callable):
+    # define preprocessor and model
+    stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
+
+    with open(json_file, "r") as f:
+        # needs to follow format of {[{"image","style",("reference")}]}
+        data=json.load(f)
+        if "image_hash" in data:
+            data=get_eval_batch(data)
+        elif "image" not in data:
+            raise KeyError("json file missing key 'image'")
+
     result=[]
     result_cap=list(map(lambda x:x.get(OutputKeys.CAPTION), stylish_ic(data)))
     for i in range(len(result_cap)):
         # add original text and style to captions
         result.append({
             **data[i],
-            "caption": result_cap[i][0],
-            **orig_text[i],
+            "caption": result_cap[i][0]
+        })
+    return result
 
+
+def start_inference_from_eval(train_conf: dict,
+                   data: List[Dict[str,str]],
+                   mod_fn: Callable):
+    '''
+    data: ["style", "image", "text"]
+    '''
+    # save ground truth and pop it for the pipeline
+    orig_text=list(map(lambda x:{"reference":x.pop("text")},data))
+
+    # define preprocessor and model
+    stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
+
+    result=[]
+    result_cap=list(map(lambda x:x.get(OutputKeys.CAPTION), stylish_ic(data)))
+    for i in range(len(result_cap)):
+        # add original text and style to captions
+        result.append({
+            **data[i],
+            **orig_text[i],
+            "caption": result_cap[i][0],
         })
     return result
 
@@ -101,9 +130,12 @@ def inference(args: argparse.Namespace, mod_fn):
         batches=random.choices(eval_ds, k=args.batch_size)
     # style_dict
         data=get_eval_batch(train_conf, batches)
+        result=start_inference_from_eval(train_conf, data, mod_fn)
     else:
-        raise NotImplementedError("inference json load is under construction")
-    result=start_inference_from_eval(train_conf, data, mod_fn)
+        if hasattr(args, "batch_size"):
+            print("WARNING: -b will lose function when -j in place")
+        result=start_inference_from_json(train_conf, args.inference_json, mod_fn)
+
     print(*result)
     # save model info to json file
     save_results_to_json(train_conf, result,

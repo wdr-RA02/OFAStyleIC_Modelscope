@@ -1,0 +1,42 @@
+[
+    {
+        "style": "Destructive",
+        "image_hash": "17bb5c2fddbd6ffcd4d35d43755cadd",
+        "reference": "I'm no pro, but he is definitely holding that bat wrong."
+    },
+    {
+        "style": "Assertive",
+        "image_hash": "f08b5d8261d8363bba5ca5b0843037bf",
+        "reference": "consider this place owned by the state "
+    },
+    {
+        "style": "Practical",
+        "image_hash": "6fc987ebf4fdea174621c361bd827fc6",
+        "reference": "I totally could go without the Nutella."
+    },
+    {
+        "style": "Aggressive",
+        "image_hash": "594e9b352cf52b193dd824c9caa16a7",
+        "reference": "I bet they are discussing about pointless stuff. I HATE these people!"
+    },
+    {
+        "style": "Cold",
+        "image_hash": "f2ed11c64f4cda6fd3fa35487f99d412",
+        "reference": "Those chairs look uncomfortable. You couldn't pay me to sit in them."
+    },
+    {
+        "style": "Exciting",
+        "image_hash": "dfcc3c611e334a37e8b2f3475b4a946",
+        "reference": "My painting one first prize"
+    },
+    {
+        "style": "Frivolous (Trivial, Silly)",
+        "image_hash": "2641f7424531f8bdbf241bc9c9a631f",
+        "reference": "WHERE YOU CAN GO DOWNTOWN"
+    },
+    {
+        "style": "Open",
+        "image_hash": "1ceb484e59e9fa56971780d0f87ceb",
+        "reference": "open the heart to share with others"
+    }
+]
