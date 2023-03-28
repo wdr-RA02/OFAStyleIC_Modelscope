@@ -21,7 +21,7 @@ pip3 install -r requirements.txt
 ## How to use
 ### Train/Eval:
 若想并卡, 则使用:
-```sh
+```shell
 CUDA_VISIBLE_DEVICES=x,y,... torchrun --rdzv_backend c10d \
         --rdzv_endpoint localhost:30000 \
         --nnodes 1 --nproc_per_node N \ 
@@ -56,7 +56,7 @@ CUDA_VISIBLE_DEVICES=x,y,... torchrun --rdzv_backend c10d \
 
 ### Inference:
 Also simple! 
-```sh
+```shell
 CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
                                  --conf path/to/conf.json [-r|-j PATH/TO/JSON]
 ```
@@ -70,7 +70,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
         "style": "Destructive",
         "image_hash": "17bb5c2fddbd6ffcd4d35d43755cadd",
         # 或: 
-        #"image": "path/to/yfcc_img/17bb5c2fddbd6ffcd4d35d43755cadd",
+        #"image": "path/to/yfcc_img/17bb5c2fddbd6ffcd4d35d43755cadd.jpg",
         # 二者皆可, 如果给了image_hash那么inference_pipeline会自己添加上yfcc目录
         "reference": "some_reference"
         # style和image/image_hash是必须有的, reference可有可无, 主要取决于需不需要参考
@@ -105,7 +105,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
 | -b/--batch_size N              | batch大小                                     | 4          | ALL                   |
 | -p/--patch_image_size P        | resnet patch大小                              | 224        | ALL                   |
 | -m/--max_image_size M          | resnet max image大小                          | 256        | ALL                   |
-| --cider                        | 是否进行基于CIDEr的scst优化[^*1][^*2]            | False      | ``train``             |
+| --cider                        | 是否进行基于CIDEr的scst优化^[1] ^[2]          | False      | ``train``             |
 | -e/--max_epoches N             | 最多训练多少epoch                                 | 3          | ``train``             |
 | -t/--checkpoint path/to/ckpt   | 指定ckpt目录                                    | None       | ``train``             |
 | --lr LR                        | 调整学习率                                       | 5e-5       | ``train``             |
@@ -118,12 +118,14 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
 | -l/--log_csv_file CSV_DIR      | 评估时将指标存在CSV_DIR中                            | None       | ``eval``              |
 | -w/--num workers N             | dataloader worker个数                         | 0          | ``train`` && ``eval`` |
 | -r/--random                    | 从eval中直接抽取样本进行推理测试                          | False      | ``inference``         |
-| -j/--inference_json JSON [^*3] | 从预先准备好的json文件中提取样本进行推理测试                    | None       | ``inference``         |
-| -d/--description DESC [^*3]    | 修改输出的推理文件中``model_name``这一字段的内容<br>而不使用模型名称 | None       | ``inference``         |
-| -o/--out_dir  OUT_DIR          | 指定推理json文件的输出目录<br>默认输出到{work_dir}下         | None       | ``inference``         |
-> [^*1]: SCST功能仍是早期版本, 相当不稳定! 
-> [^*2]: 使用SCST时必须指定checkpoint 
-> [^*3]: 推理时, -r和-j必须选择一个
+| -j/--inference_json JSON ^[3] | 从预先准备好的json文件中提取样本进行推理测试                    | None       | ``inference``         |
+| -d/--description DESC ^[3]    | 修改输出的推理文件中``model_name``这一字段的内容, 而不使用模型名称 | None       | ``inference``         |
+| -o/--out_dir  OUT_DIR          | 指定推理json文件的输出目录<br>默认输出到``{work_dir}``下         | None       | ``inference``         |
+
+注: 
+> 1: SCST功能仍是早期版本, 相当不稳定! 
+> 2: 使用SCST时必须指定checkpoint 
+> 3, 4: 推理时, -r和-j必须选择一个
 
 我目前准备使用的模型:
 - damo/ofa_image-caption_coco_distilled_en, v1.0.1  [Modelscope](https://modelscope.cn/models/damo/ofa_image-caption_coco_distilled_en/summary)  |  [conf json](conf_examples/distilled_tokenized.json)
