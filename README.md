@@ -105,7 +105,7 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
 | -b/--batch_size N              | batch大小                                     | 4          | ALL                   |
 | -p/--patch_image_size P        | resnet patch大小                              | 224        | ALL                   |
 | -m/--max_image_size M          | resnet max image大小                          | 256        | ALL                   |
-| --cider                        | 是否进行基于CIDEr的scst优化^[1] ^[2]          | False      | ``train``             |
+| --cider                        | 是否进行基于CIDEr的scst优化 *1 *2              | False      | ``train``             |
 | -e/--max_epoches N             | 最多训练多少epoch                                 | 3          | ``train``             |
 | -t/--checkpoint path/to/ckpt   | 指定ckpt目录                                    | None       | ``train``             |
 | --lr LR                        | 调整学习率                                       | 5e-5       | ``train``             |
@@ -118,8 +118,8 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
 | -l/--log_csv_file CSV_DIR      | 评估时将指标存在CSV_DIR中                            | None       | ``eval``              |
 | -w/--num workers N             | dataloader worker个数                         | 0          | ``train`` && ``eval`` |
 | -r/--random                    | 从eval中直接抽取样本进行推理测试                          | False      | ``inference``         |
-| -j/--inference_json JSON ^[3] | 从预先准备好的json文件中提取样本进行推理测试                    | None       | ``inference``         |
-| -d/--description DESC ^[3]    | 修改输出的推理文件中``model_name``这一字段的内容, 而不使用模型名称 | None       | ``inference``         |
+| -j/--inference_json JSON *3    | 从预先准备好的json文件中提取样本进行推理测试                    | None       | ``inference``         |
+| -d/--description DESC *3       | 修改输出的推理文件中``model_name``这一字段的内容, 而不使用模型名称 | None       | ``inference``         |
 | -o/--out_dir  OUT_DIR          | 指定推理json文件的输出目录<br>默认输出到``{work_dir}``下         | None       | ``inference``         |
 
 注: 
