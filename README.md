@@ -124,7 +124,9 @@ CUDA_VISIBLE_DEVICES=x python3 model_operator.py inference \
 
 注: 
 > 1: SCST功能仍是早期版本, 相当不稳定! 
+> 
 > 2: 使用SCST时必须指定checkpoint 
+> 
 > 3, 4: 推理时, -r和-j必须选择一个
 
 我目前准备使用的模型:
