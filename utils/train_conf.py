@@ -65,11 +65,10 @@ def cfg_modify_fn(args):
     beam_size=getattr(args,"beam_size",None)
 
     # ckpt hook may be changed based on whether scst is adpoted
-    by_epoch: bool=getattr(args,"cider",False)
     ckpt_hook={
             'type': 'CheckpointHook',
-            'by_epoch': by_epoch,
-            'interval': [5000,1][by_epoch],
+            'by_epoch': True,
+            'interval': 1,
             'max_checkpoint_num': 3
         }
     
