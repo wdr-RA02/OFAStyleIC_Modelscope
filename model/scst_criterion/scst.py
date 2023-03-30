@@ -51,8 +51,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob=self.get_logprob(model_output["logits"])
         # Step3.3: get loss
         # can't believe this is a numpy array...
-        rel_rewards_=torch.asarray(rel_rewards, device=self.device)
-        loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, target_tokens)
+        rel_rewards_=10*torch.asarray(rel_rewards, device=self.device)
+        # stupid of me to even forget to mask the padding index....
+        loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, 
+                                               target_tokens, ignore_index=self.padding_idx)
 
         loss_data=loss.sum()
         logging_output={
@@ -185,7 +187,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         return log_prob
 
     
-    def calculate_scst_loss(self, log_prob, scores, target):
+    def calculate_scst_loss(self, log_prob, scores, target, ignore_index=None):
         '''
         根据scst公式计算loss
 
@@ -193,6 +195,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob: 使用get_logprob得到的log probability, shape=[b, n, vocab_size]
         scores: r(w^s)-r(\hat{w}), shape=[b,]
         target: sample seq的token矩阵, shape=[b,n]
+        ignore_index: 要mask掉的token, 它不参与loss的反向传播
 
         return:
         loss: scst loss of the seq
@@ -203,11 +206,16 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob_for_each_word=log_prob.gather(dim=-1, index=target.unsqueeze(-1)).squeeze()
         # 获得的是log p(w_t|h, w_1~w_{t-1}), shape=[b, n:=words_in_seq]
         # 解释可以见20230322的log
-
-        loss=-log_prob_for_each_word.sum(dim=-1)*scores
+        loss=-log_prob_for_each_word*scores.unsqueeze(-1)
         # \nabla=(r(sample)-r(greedy)) \nabla \sigma{log(p(w_t|h, w_t-1))}
+        if ignore_index is not None:
+            pad_mask = target.eq(ignore_index)
+            loss.masked_fill_(pad_mask, 0.0)
+            ntokens = (~pad_mask).sum()
+        else:
+            loss=loss.squeeze(-1)
+            ntokens=target.numel()
 
-        ntokens=target.numel()
-        return loss, ntokens
+        return loss.sum(), ntokens
 
         
