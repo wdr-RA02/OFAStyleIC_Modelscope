@@ -50,7 +50,7 @@ def result_to_csv(train_conf: dict,
     
     json_dir=os.path.join(train_conf["work_dir"],"output", "configuration.json")
     cfg=Config.from_file(json_dir)
-    sci_out=lambda x:"{:2e}".format(x)
+    sci_out=lambda x:"{:.2e}".format(x)
     # get necessary args
     params=dict(
         work_dir=train_conf["work_dir"],
