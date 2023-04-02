@@ -356,3 +356,59 @@ eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
 这一套下来CIDEr可以提升0.8左右
 
 为什么说lrend有待验证呢? 因为我试过把epoch往上调, 结果还是往上走的, 所以我觉得现有的这一组还没有走到头. 但是我觉得还是可以先记录一下吧
+
+### 2023-04-02
+好久没写log了, 这两天都在忙鸿鹄paas吧
+
+多方查阅后决定先添加一个Style token related MLM
+
+OFAmain中处理的代码如下: ``data/pretrain_data/unify_dataset.py``
+
+```py
+def process_pure_text(self, index):
+    patch_image = torch.zeros((3, self.code_image_size*2, self.code_image_size*2))
+    patch_mask = torch.tensor([False])
+    code_mask = torch.tensor([False])
+    conf = torch.tensor([2.0])
+
+    examples = []
+    for _ in range(2):
+        uniq_id, text = self.pure_text_dataset[index]
+        text = text.strip().lower()
+        text_item = self.encode_text(" {}".format(text), length=512)
+        text_item = text_item[-256:]
+        text_item = torch.cat([self.bos_item, text_item, self.eos_item])
+        mask_text_item = self.add_whole_word_mask(text_item.clone(), self.mask_ratio)
+        prefix_item = self.encode_text(' what is the complete text of " "?')
+        src_item = torch.cat([prefix_item[:-2], mask_text_item[1:-1], prefix_item[-2:]])
+        tgt_item = text_item[1:-1]
+        src_item = torch.cat([self.bos_item, src_item, self.eos_item])
+        target_item = torch.cat([tgt_item, self.eos_item])
+        prev_output_item = torch.cat([self.bos_item, tgt_item])
+        example = {
+            "id": uniq_id,
+            "source": src_item,
+            "patch_image": patch_image,
+            "patch_mask": patch_mask,
+            "code_mask": code_mask,
+            "target": target_item,
+            "prev_output_tokens": prev_output_item,
+            "conf": conf,
+        }
+        examples.append(example)
+
+    return examples
+```
+
+作为写preprocessor的参考
+
+要做的事情: 
+1. 参考上面的代码在现有的Preprocessor基础上添加mask功能
+ - 可能涉及数据集结构的重整
+2. 继承OFAtrainer添加针对mask的ce loss
+ - 把创建preprocessor内建到里面去
+ - 要添加平衡因子
+  
+其他的先没想到哈哈
+
+
