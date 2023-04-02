@@ -4,7 +4,7 @@ from modelscope.pipelines import pipeline
 
 from .utils.constants import *
 from .utils.build_dataset import generate_msdataset, collate_pcaption_dataset
-from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
+from preprocessor import OfaPreprocessorforStylishIC
 
 
 def get_eval_batch(train_conf: dict,

@@ -1,0 +1,1 @@
+from .stylish_image_caption import OfaPreprocessorforStylishIC, OfaStylishICPreprocessor
