@@ -412,3 +412,9 @@ def process_pure_text(self, index):
 其他的先没想到哈哈
 
 
+加载document freq的代码: (cider_scorer.py)
+```py
+pkl_file = cPickle.load(open(df_mode,'rb'), **(dict(encoding='latin1') if six.PY3 else {}))
+self.ref_len = np.log(float(pkl_file['ref_len']))
+self.document_frequency = pkl_file['document_frequency']
+```
