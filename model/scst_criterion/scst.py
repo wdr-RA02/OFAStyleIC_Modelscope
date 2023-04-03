@@ -7,6 +7,7 @@ from modelscope.models.multi_modal import OfaForAllTasks
 from modelscope.utils.config import Config
 from torch.nn.modules.loss import _Loss
 from .reward_calc import RewardCalculator
+from .reward_calc import RewardCalculatorforCiderD as RewardCalcCiderD
 
 
 class SelfCriticalSeqTrainingCriterion(_Loss):
@@ -16,7 +17,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
         self.bos_idx=args.tokenizer.bos_token_id
-        self.reward_calc=RewardCalculator(eos_token=args.tokenizer.eos_token)
+        self.reward_calc=RewardCalcCiderD(eos_token=args.tokenizer.eos_token)
         super().__init__()
 
 
@@ -51,7 +52,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob=self.get_logprob(model_output["logits"])
         # Step3.3: get loss
         # can't believe this is a numpy array...
-        rel_rewards_=10*torch.asarray(rel_rewards, device=self.device)
+        rel_rewards_=torch.asarray(rel_rewards, device=self.device)
         # stupid of me to even forget to mask the padding index....
         loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, 
                                                target_tokens, ignore_index=self.padding_idx)
