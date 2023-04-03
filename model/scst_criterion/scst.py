@@ -7,6 +7,7 @@ from modelscope.models.multi_modal import OfaForAllTasks
 from modelscope.utils.config import Config
 from torch.nn.modules.loss import _Loss
 from .reward_calc import RewardCalculator
+from .reward_calc import RewardCalculatorforCiderD as RewardCalcCiderD
 
 
 class SelfCriticalSeqTrainingCriterion(_Loss):
@@ -16,7 +17,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
         self.bos_idx=args.tokenizer.bos_token_id
-        self.reward_calc=RewardCalculator(eos_token=args.tokenizer.eos_token)
+        self.reward_calc=RewardCalcCiderD(eos_token=args.tokenizer.eos_token)
         super().__init__()
 
 
@@ -52,7 +53,9 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # Step3.3: get loss
         # can't believe this is a numpy array...
         rel_rewards_=torch.asarray(rel_rewards, device=self.device)
-        loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, target_tokens)
+        # stupid of me to even forget to mask the padding index....
+        loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, 
+                                               target_tokens, ignore_index=self.padding_idx)
 
         loss_data=loss.sum()
         logging_output={
@@ -185,7 +188,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         return log_prob
 
     
-    def calculate_scst_loss(self, log_prob, scores, target):
+    def calculate_scst_loss(self, log_prob, scores, target, ignore_index=None):
         '''
         根据scst公式计算loss
 
@@ -193,6 +196,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob: 使用get_logprob得到的log probability, shape=[b, n, vocab_size]
         scores: r(w^s)-r(\hat{w}), shape=[b,]
         target: sample seq的token矩阵, shape=[b,n]
+        ignore_index: 要mask掉的token, 它不参与loss的反向传播
 
         return:
         loss: scst loss of the seq
@@ -203,11 +207,16 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         log_prob_for_each_word=log_prob.gather(dim=-1, index=target.unsqueeze(-1)).squeeze()
         # 获得的是log p(w_t|h, w_1~w_{t-1}), shape=[b, n:=words_in_seq]
         # 解释可以见20230322的log
-
-        loss=-log_prob_for_each_word.sum(dim=-1)*scores
+        loss=-log_prob_for_each_word*scores.unsqueeze(-1)
         # \nabla=(r(sample)-r(greedy)) \nabla \sigma{log(p(w_t|h, w_t-1))}
+        if ignore_index is not None:
+            pad_mask = target.eq(ignore_index)
+            loss.masked_fill_(pad_mask, 0.0)
+            ntokens = (~pad_mask).sum()
+        else:
+            loss=loss.squeeze(-1)
+            ntokens=target.numel()
 
-        ntokens=target.numel()
-        return loss, ntokens
+        return loss.sum(), ntokens
 
         

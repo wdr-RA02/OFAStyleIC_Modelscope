@@ -1,5 +1,5 @@
 from .constants import *
-from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
+from preprocessor import OfaPreprocessorforStylishIC
 
 def generate_preprocessors(train_conf: dict,
                            from_pretrained: str=None,

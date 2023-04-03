@@ -387,3 +387,147 @@ eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
 这一套下来CIDEr可以提升0.8左右
 
 为什么说lrend有待验证呢? 因为我试过把epoch往上调, 结果还是往上走的, 所以我觉得现有的这一组还没有走到头. 但是我觉得还是可以先记录一下吧
+
+### 2023-04-02
+好久没写log了, 这两天都在忙鸿鹄paas吧
+
+多方查阅后决定先添加一个Style token related MLM
+
+OFAmain中处理的代码如下: ``data/pretrain_data/unify_dataset.py``
+
+```py
+def process_pure_text(self, index):
+    patch_image = torch.zeros((3, self.code_image_size*2, self.code_image_size*2))
+    patch_mask = torch.tensor([False])
+    code_mask = torch.tensor([False])
+    conf = torch.tensor([2.0])
+
+    examples = []
+    for _ in range(2):
+        uniq_id, text = self.pure_text_dataset[index]
+        text = text.strip().lower()
+        text_item = self.encode_text(" {}".format(text), length=512)
+        text_item = text_item[-256:]
+        text_item = torch.cat([self.bos_item, text_item, self.eos_item])
+        mask_text_item = self.add_whole_word_mask(text_item.clone(), self.mask_ratio)
+        prefix_item = self.encode_text(' what is the complete text of " "?')
+        src_item = torch.cat([prefix_item[:-2], mask_text_item[1:-1], prefix_item[-2:]])
+        tgt_item = text_item[1:-1]
+        src_item = torch.cat([self.bos_item, src_item, self.eos_item])
+        target_item = torch.cat([tgt_item, self.eos_item])
+        prev_output_item = torch.cat([self.bos_item, tgt_item])
+        example = {
+            "id": uniq_id,
+            "source": src_item,
+            "patch_image": patch_image,
+            "patch_mask": patch_mask,
+            "code_mask": code_mask,
+            "target": target_item,
+            "prev_output_tokens": prev_output_item,
+            "conf": conf,
+        }
+        examples.append(example)
+
+    return examples
+```
+
+作为写preprocessor的参考
+
+要做的事情: 
+1. 参考上面的代码在现有的Preprocessor基础上添加mask功能
+ - 可能涉及数据集结构的重整
+2. 继承OFAtrainer添加针对mask的ce loss
+ - 把创建preprocessor内建到里面去
+ - 要添加平衡因子
+### 2023-03-25
+bash ./work_dir/scripts/train_step2_standalone.sh 0,2,3
+
+tee既输出又保存
+jq 解析json
+
+保存json的
+eval_script...... | tail -n 1 | sed "s#'#\"#g" | jq .
+
+编写自动化训练shell的艰辛困苦!
+
+今天学到的shell知识, 包括但不限于:
+1. 赋值最好用`echo xxx`
+2. 函数的返回不是return而是echo
+3. awk -F, '{print NF}'是统计列数的
+4. awk中NR>1可以略过第一行 (之后要好好学awk啊)
+5. 浮点数比较要这样: `echo $a > $b | bc`
+6. getattr(item, attr, default)的实现方式:
+``value=${VAR:-default_value}``
+
+目前用base_pt半小时出一波结果, 等明天看看哪个最好, 然后我再训出一个不错的底子就算了
+
+### 2023-03-27
+
+挂了三十多次模型, 发现cider的sweet spot如下(base):
+- **warm_up=0.06** (可以实锤)
+- lr=2e-5/2.5e-5
+- lr_end=7.5e-5  (还有待进一步验证)
+- weight_decay=0.001 (基本上不能再大了, 感觉甚至可以往小了试)
+- batch=24, worker=8 (此时占用7.3G左右显存)
+- epoch=3
+
+这一套下来CIDEr可以提升0.8左右
+  
+
+其他的先没想到哈哈
+
+
+加载document freq的代码: (cider_scorer.py)
+```py
+pkl_file = cPickle.load(open(df_mode,'rb'), **(dict(encoding='latin1') if six.PY3 else {}))
+self.ref_len = np.log(float(pkl_file['ref_len']))
+self.document_frequency = pkl_file['document_frequency']
+```
+
+
+
+### 2023-04-03
+今天参考[https://github.com/ruotianluo/self-critical.pytorch](这里)写好了ciderd需要的idf, 目前这个代码还先存到本地
+
+主要需要执行的命令:
+1. 把pc转换成类似coco的那种数据集格式
+
+```sh
+python scripts/pcap_to_cocoraw.py
+```
+coco格式为
+```python
+{
+    "images":[{
+        "image_id": i,
+        "sentences":[{"tokens": pcap[i]["comment"].lower().split()}, ...],
+        "split": "eval"    
+    }, ...]
+}
+```
+这里只列出了后面必要的格式
+
+2. 生成字典文件
+
+```sh
+python ./scripts/prepro_labels.py --input_json ./data/pcap_in_coco.json --output_json ./data/pcaptalk.json --max_length 30 --word_count_threshold 2
+```
+
+3. 通过1和2, 借助pyciderevalcap生成idf文档
+```sh
+python ./scripts/prepro_ngrams.py --input_json ./data/pcap_in_coco.json --dict_json ./data/pcaptalk.json --output_pkl ./data/pcap-val-2
+```
+
+data下以-word.p结尾的文件就是idf文档
+
+其次, CiderD接受的输入格式和Cider还有所不同, 分别是
+
+- ref:
+```python
+ref=[{"image_id": i, "caption": ["sentence"]},...]
+```
+
+- gts: 很简单, 就是List of list
+
+但是生成的时候犯了一个弱智错误, 忘了跳eos, 我忘了bart的eos不是<eos>, 而是</s>, 导致我到现在也没搞出一个正向结果T^T
+为什么说lrend有待验证呢? 因为我试过把epoch往上调, 结果还是往上走的, 所以我觉得现有的这一组还没有走到头. 但是我觉得还是可以先记录一下吧

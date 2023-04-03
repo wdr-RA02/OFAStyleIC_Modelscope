@@ -2,15 +2,19 @@ import random
 from datetime import datetime as dt
 from modelscope.pipelines import pipeline
 
+
 from metric import stylish_ic_metric
 from .utils.constants import *
 from .utils.build_dataset import generate_msdataset, collate_pcaption_dataset
-from preprocessor.stylish_image_caption import OfaPreprocessorforStylishIC
+from preprocessor import OfaPreprocessorforStylishIC
 
 
 def get_eval_batch(train_conf: dict,
                    data: list):
     # use collate_pcaption fn to add address
+    if "image_hash" in data[0]:
+        for item in data:
+            item["image"]=item.pop("image_hash")
     out_data=list(map(lambda x:collate_pcaption_dataset(x, 
                                                    train_conf["img_addr"], 
                                                    train_conf["file_attr"]), data))
@@ -31,6 +35,46 @@ def generate_infr_pipeline(train_conf: Dict[str, str],
     stylish_ic=pipeline(Tasks.image_captioning, 
                         model=model_dir, 
                         preprocessor=preprocessor)
+
+    return stylish_ic
+
+
+def start_inference_from_json(train_conf: Dict[str,str],
+                              json_file: str, 
+                              mod_fn: Callable):
+    # define preprocessor and model
+    stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
+
+    with open(json_file, "r") as f:
+        # needs to follow format of {[{"image","style",("reference")}]}
+        data=json.load(f)
+        if "image_hash" in data[0]:
+            data=get_eval_batch(train_conf,data)
+        elif "image" not in data[0]:
+            raise KeyError("json file missing key 'image'")
+
+    result=[]
+    result_cap=list(map(lambda x:x.get(OutputKeys.CAPTION), stylish_ic(data)))
+    for i in range(len(result_cap)):
+        # add original text and style to captions
+        result.append({
+            **data[i],
+            "caption": result_cap[i][0]
+        })
+    return result
+
+
+def start_inference_from_eval(train_conf: dict,
+                   data: List[Dict[str,str]],
+                   mod_fn: Callable):
+    '''
+    data: ["style", "image", "text"]
+    '''
+    # save ground truth and pop it for the pipeline
+    orig_text=list(map(lambda x:{"reference":x.pop("text")},data))
+
+    # define preprocessor and model
+    stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
 
 
 def start_inference_from_json(train_conf: Dict[str,str],

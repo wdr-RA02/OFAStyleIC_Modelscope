@@ -50,13 +50,14 @@ def result_to_csv(train_conf: dict,
     
     json_dir=os.path.join(train_conf["work_dir"],"output", "configuration.json")
     cfg=Config.from_file(json_dir)
+    sci_out=lambda x:"{:.2e}".format(x)
     # get necessary args
     params=dict(
         work_dir=train_conf["work_dir"],
         epoches=str(cfg.train.max_epochs),
         warm_up=str(cfg.train.lr_scheduler.warmup_proportion),
-        lr=str(cfg.train.optimizer.lr),
-        lr_end=str(cfg.train.lr_scheduler.lr_end),
+        lr=sci_out(cfg.train.optimizer.lr),
+        lr_end=sci_out(cfg.train.lr_scheduler.lr_end),
         weight_decay=str(cfg.train.optimizer.weight_decay),
     )
     # create title bar if not exist

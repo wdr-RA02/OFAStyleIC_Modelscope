@@ -31,12 +31,13 @@ def list_styles(dataset_path: str,
     
     return style_list
 
-def get_style_dict_from_ls(style_list: list):
+def get_style_dict_from_ls(style_list: list, template:str="<code_{}>"):
     '''
     需要的时候调用此函数将personality_captions的风格逐一添加到self.tokenizer里面
     '''
     # 暂时没想到怎么加style_k, 先用code_k顶一下吧, 哎...
-    style_dict = {style:f"<code_{i}>" for i, style in enumerate(style_list)}
+    print("Load {} items".format(len(style_list)))
+    style_dict = {style:template.format(i) for i, style in enumerate(style_list)}
 
     return style_dict
 
@@ -44,9 +45,41 @@ def generate_style_dict(train_conf: dict):
     '''
     根据train_conf直接返回需要的style_dict
     '''
-    style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
-    return get_style_dict_from_ls(style_list)
+    if "style_dict" in train_conf.keys():
+        style_file=train_conf["style_dict"]
+        with open(style_file) as f:
+            style_dict=json.load(f)
+            assert set(style_dict.keys())=={"template", "items"}
+            print("Load {} items from {}".format(len(style_dict["items"]),style_file))
+        # load token template
+        template=style_dict["template"]
+        out_style_dict={style:template.format(i) for style, i in style_dict["items"].items()}
 
+        return out_style_dict
+
+    else:
+        style_list=list_styles(train_conf["dataset_path"], "personalities.txt")
+        return get_style_dict_from_ls(style_list)
+
+
+def save_style_dict_to_json(style_dict: dict,
+                            save_filename: str,
+                            token_template: str):
+    '''
+    将style dict保存到一个json文件中方便后续调用
+    保存格式: {template: token_template, item:{style: id}}
+
+    '''
+    styles=style_dict.keys()
+    out_style_dict={
+        "template": token_template,
+        "items": {style: i for i,style in enumerate(styles)}
+    }
+
+    with open(save_filename, "w+") as f:
+        json.dump(out_style_dict, f, indent=4)
+        print("Wrote {} items to {}".format(len(styles), save_filename))
+    
 
 # config_modify_function
 def cfg_modify_fn(args):
@@ -65,11 +98,10 @@ def cfg_modify_fn(args):
     beam_size=getattr(args,"beam_size",None)
 
     # ckpt hook may be changed based on whether scst is adpoted
-    by_epoch: bool=getattr(args,"cider",False)
     ckpt_hook={
             'type': 'CheckpointHook',
-            'by_epoch': by_epoch,
-            'interval': [5000,1][by_epoch],
+            'by_epoch': True,
+            'interval': 1,
             'max_checkpoint_num': 3
         }
     
