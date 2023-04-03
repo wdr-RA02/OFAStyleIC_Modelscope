@@ -24,7 +24,6 @@ class RewardCalculator(object):
         self.eos_token = eos_token
         self.PTB=PTBTokenizer
         self.cider=Cider()
-        self.multiply_constant=(1,100)[mul_100]
 
     OK_LIST_FMT=List[Union[str, List[str]]]   
 
@@ -80,7 +79,7 @@ class RewardCalculator(object):
         #     scores.append(score)
         score, scores=self.cider.compute_score(self.ground_truth, self.reference)
 
-        return score*self.multiply_constant, scores*self.multiply_constant
+        return score, scores
 
 
     def __call__(self, 
