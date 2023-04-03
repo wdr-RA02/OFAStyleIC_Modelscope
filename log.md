@@ -418,3 +418,50 @@ pkl_file = cPickle.load(open(df_mode,'rb'), **(dict(encoding='latin1') if six.PY
 self.ref_len = np.log(float(pkl_file['ref_len']))
 self.document_frequency = pkl_file['document_frequency']
 ```
+
+
+
+### 2023-04-03
+今天参考[https://github.com/ruotianluo/self-critical.pytorch](这里)写好了ciderd需要的idf, 目前这个代码还先存到本地
+
+主要需要执行的命令:
+1. 把pc转换成类似coco的那种数据集格式
+
+```sh
+python scripts/pcap_to_cocoraw.py
+```
+coco格式为
+```python
+{
+    "images":[{
+        "image_id": i,
+        "sentences":[{"tokens": pcap[i]["comment"].lower().split()}, ...],
+        "split": "eval"    
+    }, ...]
+}
+```
+这里只列出了后面必要的格式
+
+2. 生成字典文件
+
+```sh
+python ./scripts/prepro_labels.py --input_json ./data/pcap_in_coco.json --output_json ./data/pcaptalk.json --max_length 30 --word_count_threshold 2
+```
+
+3. 通过1和2, 借助pyciderevalcap生成idf文档
+```sh
+python ./scripts/prepro_ngrams.py --input_json ./data/pcap_in_coco.json --dict_json ./data/pcaptalk.json --output_pkl ./data/pcap-val-2
+```
+
+data下以-word.p结尾的文件就是idf文档
+
+其次, CiderD接受的输入格式和Cider还有所不同, 分别是
+
+- ref:
+```python
+ref=[{"image_id": i, "caption": ["sentence"]},...]
+```
+
+- gts: 很简单, 就是List of list
+
+但是生成的时候犯了一个弱智错误, 忘了跳eos, 我忘了bart的eos不是<eos>, 而是</s>, 导致我到现在也没搞出一个正向结果T^T
