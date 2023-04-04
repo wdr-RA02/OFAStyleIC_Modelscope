@@ -49,17 +49,24 @@ def generate_ready_ds(train_conf: dict,
 
     return: train_ds, eval_ds
     '''
-    assert ds_type.lower() in ["train", "val", "test"], \
+    pattern=re.compile("^(train|eval|test)(\[-*[0-9]*?:-*[0-9]*?\])?$")
+    type_slice=re.match(pattern,ds_type.lower())
+    assert type_slice is not None, \
         "Dataset must be one of ['train', 'val', 'test'], got {}".format(ds_type)
+    # obtain type and slice from regex matching
+    dtype, part=type_slice.groups()
+    if part=="[:]":
+        part=None
     
-    ds_type=ds_type.lower()+"_json"
+    ds_type=dtype+"_json"
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
     collate_fn=partial(collate_pcaption_dataset, dataset_dir=img_addr)
     # generate dataset according to needs
     hf_ds = generate_msdataset(dataset_path,
                                 train_conf[ds_type],
-                                remap)
+                                remap,
+                                parts=part)
     hf_ds = hf_ds.map(collate_fn)
     return hf_ds
 
