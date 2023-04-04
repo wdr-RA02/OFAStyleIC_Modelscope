@@ -142,7 +142,7 @@ class RewardCalculator(object):
 
 class RewardCalculatorforCiderD(object):
     def __init__(self, 
-                 ciderd_df: str="./work_dir/pcap-val-df.p",
+                 ciderd_df: str="./work_dir/pcap-cider-idf.p",
                  eos_token: str="</s>",
                  **kwargs):
         '''
