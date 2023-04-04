@@ -55,9 +55,9 @@ def generate_ready_ds(train_conf: dict,
         "Dataset must be one of ['train', 'val', 'test'], got {}".format(ds_type)
     # obtain type and slice from regex matching
     dtype, part=type_slice.groups()
-    if part=="[:]":
-        part=None
-    
+    if part is None or part=="[:]":
+        part=""
+        
     ds_type=dtype+"_json"
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
