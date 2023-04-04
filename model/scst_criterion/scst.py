@@ -17,7 +17,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
         self.bos_idx=args.tokenizer.bos_token_id
-        self.reward_calc=RewardCalcCiderD(eos_token=args.tokenizer.eos_token)
+        self.reward_calc=RewardCalcCiderD(ciderd_df="./work_dir/pcap-train50k-cider-idf.p",eos_token=args.tokenizer.eos_token)
         super().__init__()
 
 
@@ -39,7 +39,12 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         _, baseline_words = self.get_sample_from_beams(model, inputs)
         
         # Step2: calculate rewards
-        gt_batch=inputs["labels"]
+        # gt_batch=inputs["labels"]
+        def collate_target_tokens(x):
+            return x.replace(self.tokenizer.pad_token, "").replace(self.tokenizer.eos_token, "")
+
+        gt_batch=self.tokenizer.batch_decode(inputs["target"])
+        gt_batch=list(map(collate_target_tokens, gt_batch))
         # reward_sample, rewards_sample=self.reward_calc(gen_tgt_words, gt_batch)
         # reward_baseline, rewards_baseline=self.reward_calc(baseline_words, gt_batch)
         reference={"sampled": gen_tgt_words, "greedy": baseline_words}
@@ -95,10 +100,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         greedy_res=[]
         # beam_size=5
         for i in range(len(beam_candidates)):
-            # randomly pick the candidate
+            # use the final output
             # len(gen_candidates)==batch_size
-            lucky_cap_id=random.randint(0, len(beam_candidates[i])-1)
-            lucky_cap=beam_candidates[i][lucky_cap_id]["tokens"]
+            lucky_id=random.randint(0, len(beam_candidates[i])-1)
+            lucky_cap=beam_candidates[i][lucky_id]["tokens"]
             # save token
             gen_target.append(lucky_cap.int())
             # save decoded gen and ground truth
