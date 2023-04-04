@@ -49,7 +49,7 @@ def generate_ready_ds(train_conf: dict,
 
     return: train_ds, eval_ds
     '''
-    pattern=re.compile("^(train|eval|test)(\[-*[0-9]*?:-*[0-9]*?\])?$")
+    pattern=re.compile("^(train|val|test)(\[-*[0-9]*?:-*[0-9]*?\])?$")
     type_slice=re.match(pattern,ds_type.lower())
     assert type_slice is not None, \
         "Dataset must be one of ['train', 'val', 'test'], got {}".format(ds_type)
@@ -57,7 +57,7 @@ def generate_ready_ds(train_conf: dict,
     dtype, part=type_slice.groups()
     if part is None or part=="[:]":
         part=""
-        
+
     ds_type=dtype+"_json"
     img_addr=train_conf["img_addr"]
     dataset_path=train_conf["dataset_path"]
