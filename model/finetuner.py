@@ -35,7 +35,7 @@ def generate_trainer(train_conf: Dict[str, str],
     tokenize=train_conf["tokenize_style"]
     # model_dir = snapshot_download(model_name)
     # set dataset addr
-    ds_type=["train", "train[-{}:]".format(20000)][use_cider]
+    ds_type=["train", "train[-{}:]".format(50000)][use_cider]
     train_ds=generate_ready_ds(train_conf, ds_type=ds_type, remap=remap)
 
     args = dict(
