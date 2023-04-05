@@ -35,20 +35,17 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # Step1: generate sample and baseline
         self.device=model.model.device
 
-        gen_tgt_tokens, gen_tgt_words, \
-        _, baseline_words = self.get_sample_from_beams(model, inputs)
+        gen_tgt_tokens, gen_tgt_words, gt_words = self.get_sample_from_beams(model, inputs)
         
         # Step2: calculate rewards
-        # gt_batch=inputs["labels"]
-        def collate_target_tokens(x):
-            return x.replace(self.tokenizer.pad_token, "").replace(self.tokenizer.eos_token, "")
+        _, rel_rewards=self.reward_calc(gen_tgt_words, gt_words)
+        ref_per_gt=len(gen_tgt_words[0])
+        rel_rewards=rel_rewards.reshape(-1,ref_per_gt)
 
-        gt_batch=self.tokenizer.batch_decode(inputs["target"])
-        gt_batch=list(map(collate_target_tokens, gt_batch))
-        # reward_sample, rewards_sample=self.reward_calc(gen_tgt_words, gt_batch)
-        # reward_baseline, rewards_baseline=self.reward_calc(baseline_words, gt_batch)
-        reference={"sampled": gen_tgt_words, "greedy": baseline_words}
-        rel_reward, rel_rewards=self.reward_calc(reference, gt_batch)
+        # reward=r(beam_i)-r(beam_avg)
+        rel_rewards=rel_rewards-(rel_rewards.sum(axis=1, keepdims=True)/ref_per_gt)
+        rel_rewards=rel_rewards.reshape(-1,1).squeeze()
+        # rel_rewards.shape=[batch_size*beam,]
 
         # Step3: get gradient
         # Step3.1: get model output using the sample input
@@ -62,7 +59,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, 
                                                target_tokens, ignore_index=self.padding_idx)
 
-        loss_data=loss.sum()
+        loss_data=loss.sum()/ref_per_gt
         logging_output={
             "loss": loss_data.data,
             "score": rel_rewards_.sum(),
@@ -85,6 +82,12 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         gen_res: decode后的sampled_sequence list
         baseline_res:  decode后的baseline list, 使用贪婪解码
         '''
+        def collate_target_tokens(x):
+            return x.replace(self.tokenizer.pad_token, "").replace(self.tokenizer.eos_token, "")
+
+        gt_batch=self.tokenizer.batch_decode(inputs["target"])
+        gt_batch=list(map(collate_target_tokens, gt_batch))
+
         model.model.eval()
         with torch.no_grad():
             # generate the candidates with beam decoding
@@ -92,34 +95,38 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
                                               inputs,
                                               prefix_tokens=inputs.get(
                                                   'prefix_tokens', None))
-            greedy_decode=self.greedy_decode(model, inputs)
+            # greedy_decode=self.greedy_decode(model, inputs)
 
         gen_target=[]
         gen_res=[]
-        greedy_target=[]
-        greedy_res=[]
+        gt_res=[]
+        # greedy_target=[]
+        # greedy_res=[]
         # beam_size=5
-        for i in range(len(beam_candidates)):
+        for i_batch in range(len(beam_candidates)):
             # use the final output
             # len(gen_candidates)==batch_size
-            lucky_id=random.randint(0, len(beam_candidates[i])-1)
-            lucky_cap=beam_candidates[i][lucky_id]["tokens"]
-            # save token
-            gen_target.append(lucky_cap.int())
-            # save decoded gen and ground truth
-            gen_res.append(self.tokenizer.decode(lucky_cap).strip())
+            gt_res.append(gt_batch[i_batch])
+            gen_target.append(list())
+            gen_res.append(list())
+            for one_beam in beam_candidates[i_batch]:
+                beam_token=one_beam["tokens"]
+                # save token 
+                gen_target[i_batch].append(beam_token.int())
+                # save decoded gen and ground truth
+                gen_res[i_batch].append(self.tokenizer.decode(beam_token).strip())
         
-        for i in range(len(greedy_decode)):
-            # we can securely access via [0]
-            greedy_cap=greedy_decode[i][0]["tokens"]
+        # for i in range(len(greedy_decode)):
+        #     # we can securely access via [0]
+        #     greedy_cap=greedy_decode[i][0]["tokens"]
 
-            greedy_target.append(greedy_cap.int())
-            greedy_res.append(self.tokenizer.decode(greedy_cap).strip())
+        #     greedy_target.append(greedy_cap.int())
+        #     greedy_res.append(self.tokenizer.decode(greedy_cap).strip())
 
 
         # gen_target: List[Tensor]
         # gen_res: List[str]
-        return gen_target, gen_res, greedy_target, greedy_res
+        return gen_target, gen_res, gt_res
     
     @torch.no_grad()
     def greedy_decode(self, model, inputs):
@@ -140,7 +147,10 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # print(logits.shape)
         return greedy_baseline
     
-    def get_output_of_model(self, model, inputs, sample_tokens):
+    def get_output_of_model(self,
+                            model, 
+                            inputs, 
+                            sample_tokens):
         '''
         将sample sequence作为encoder input, 得到logits等等输出项
 
@@ -152,11 +162,15 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         '''
 
         model.model.train()
-        batch_size=inputs["nsentences"]
         net_input=inputs["net_input"]
 
         # replace net_input["decoder_input_ids"] to that of the sample
         # insert each token list to new_dec_input_ids[i, :] and pad with padding_idx
+        # unsqueeze the sample_token
+        
+        sample_tokens=[beam_j for samples_i in sample_tokens for beam_j in samples_i]
+        batch_size=len(sample_tokens)
+        ref_per_gt=batch_size//inputs["nsentences"]
         seq_length=max(v.shape[0] for v in sample_tokens)
         # seq len+1 for bos
         new_dec_input_ids=torch.full(size=(batch_size, seq_length+1), 
@@ -170,13 +184,27 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
 
         for i, one_sample_token in enumerate(sample_tokens):
             # fill in the tokens by line
+            # since we have N ref per gt, we need to fill N lines each time
             new_dec_input_ids[i, 1:len(one_sample_token)].copy_(one_sample_token[:-1])
             new_target[i, 0:len(one_sample_token)].copy_(one_sample_token)
 
+        # copy each input for N times
+        new_input_ids=torch.repeat_interleave(
+            net_input["input_ids"], ref_per_gt, dim=0
+        )
+        new_patch_images=torch.repeat_interleave(
+            net_input["patch_images"], ref_per_gt, dim=0
+        )
+        new_patch_masks=torch.repeat_interleave(
+            net_input["patch_masks"], ref_per_gt, dim=0
+        )
 
         net_input.update({"decoder_input_ids": new_dec_input_ids})
         inputs.update({"target": new_target})
-        model_output=model.model(**net_input)
+        model_output=model.model(input_ids=new_input_ids,
+                                 patch_images=new_patch_images,
+                                 patch_masks=new_patch_masks,
+                                 decoder_input_ids=new_dec_input_ids)
 
         return model_output, new_target
     
