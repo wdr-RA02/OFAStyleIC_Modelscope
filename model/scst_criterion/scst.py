@@ -59,7 +59,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         loss, ntokens=self.calculate_scst_loss(log_prob, rel_rewards_, 
                                                target_tokens, ignore_index=self.padding_idx)
 
-        loss_data=loss.sum()
+        loss_data=loss.sum()/ref_per_gt
         logging_output={
             "loss": loss_data.data,
             "score": rel_rewards_.sum(),
