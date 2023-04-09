@@ -17,7 +17,7 @@ class SelfCriticalSeqTrainingCriterion(_Loss):
         # padding
         self.padding_idx = args.tokenizer.pad_token_id
         self.bos_idx=args.tokenizer.bos_token_id
-        self.reward_calc=RewardCalcCiderD(ciderd_df="./work_dir/pcap-train50k-cider-idf.p",eos_token=args.tokenizer.eos_token)
+        self.reward_calc=RewardCalcCiderD(ciderd_df="./work_dir/pcap-train-full-words.p",eos_token=args.tokenizer.eos_token)
         super().__init__()
 
 
