@@ -7,3 +7,4 @@ workspace/
 work_dir/
 
 conf/
+scripts/.*

@@ -7,26 +7,29 @@ then
     return
 fi
 
-# specify an environment to activate
-env_lists=$(conda env list | tail -n+3 | awk '{print $1}')
-PS3="Please specify an environment to activate, Ctrl-C to exit: "
-select env in ${env_lists[@]}
-do
-    if [ -z $env ]
-    then 
-        echo "Invalid option. "
-    else
-        conda activate $env
-        echo "Activated environment $env"
-        break
-    fi
-done
-
-# exit if the env does not exist
-# [ $? != 0 ] && exit $?;
-
 export CODE_DIR=$HOME/codes/OFAStyle
 echo "Set code dir to $CODE_DIR"
+
+function set_anaconda_env()
+{
+    env_lists=$(conda env list | tail -n+3 | awk '{print $1}')
+    PS3="Please specify an environment to activate, Ctrl-C to exit: "
+    select env in ${env_lists[@]}
+    do
+        if [ -z $env ]
+        then 
+            echo "Invalid option. "
+        else
+            conda activate $env
+            echo "Activated environment $env"
+            break
+        fi
+    done
+    rm -rv $CODE_DIR/workspace/*
+}
+
+[ "$1" != "skip" ] && set_anaconda_env || echo "Skipped setting up anaconda environment"
+# specify an environment to activate
 
 # custom config just for ease
 alias ps_me="ps -o euser=EUSER_____________,pid,cmd=cmd__________________________________,etime -u $USER"
