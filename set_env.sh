@@ -1,7 +1,32 @@
 #!/bin/bash
 
 # activate the env
-source $HOME/anaconda3/bin/activate modelscope_py38_cu102
+if [ -z $(which conda) ]
+then
+    echo "conda not exist in your system. "
+    return
+fi
+
+# specify an environment to activate
+env_lists=$(conda env list | tail -n+3 | awk '{print $1}')
+PS3="Please specify an environment to activate, Ctrl-C to exit: "
+select env in ${env_lists[@]}
+do
+    if [ -z $env ]
+    then 
+        echo "Invalid option. "
+    else
+        conda activate $env
+        echo "Activated environment $env"
+        break
+    fi
+done
+
+# exit if the env does not exist
+# [ $? != 0 ] && exit $?;
+
+export CODE_DIR=$HOME/codes/OFAStyle
+echo "Set code dir to $CODE_DIR"
 
 # custom config just for ease
 alias ps_me="ps -o euser=EUSER_____________,pid,cmd=cmd__________________________________,etime -u $USER"
@@ -28,14 +53,16 @@ watch_nvsmi_simple(){
 }
 
 # useful aliases
-alias xe_base_mul="./work_dir/scripts/train_step1_mul_base.sh"
-alias cider_base_mul="./work_dir/scripts/train_step2_mul_base.sh"
+alias xe_base_mul="$CODE_DIR/scripts/train_step1_mul_base.sh"
+alias cider_base_mul="$CODE_DIR/scripts/train_step2_mul_base.sh"
 alias inference="python3 model_operator.py inference"
-alias watch_baseline_csv="./work_dir/scripts/watch_csv.sh 0.5 ./work_dir/scripts/metrics_params/baseline.csv"
-alias watch_cider_csv="./work_dir/scripts/watch_csv.sh 0.5 ./work_dir/scripts/metrics_params/base_pt.csv"
+alias watch_baseline_csv="$CODE_DIR/scripts/watch_csv.sh 0.5 $CODE_DIR/scripts/metrics_params/baseline.csv"
+alias watch_cider_csv="$CODE_DIR/scripts/watch_csv.sh 0.5 $CODE_DIR/scripts/metrics_params/base_pt.csv"
 
 # export these to other shells
 export -f tasklist_pid
 export -f watch_nvsmi
 export -f watch_nvsmi_simple
 
+echo "Done! "
+cd $CODE_DIR
