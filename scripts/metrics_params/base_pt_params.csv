@@ -1,3 +1,0 @@
-epoches,warm_up,lr,lr_end,weight_decay,batch_size,freeze_resnet
-2,0.06,8.00e-06,4.00e-07,0.001,8,true
-2,0.06,1.00e-05,5.00e-07,0.001,8,true

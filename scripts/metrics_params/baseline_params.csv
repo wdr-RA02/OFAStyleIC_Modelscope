@@ -1,3 +1,0 @@
-epoches,warm_up,lr,lr_end,weight_decay,batch_size
-3,0.05,8e-05,4e-07,0.001,12
-3,0.05,1e-04,5e-07,0.001,12
