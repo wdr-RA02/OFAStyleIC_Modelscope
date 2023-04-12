@@ -142,7 +142,7 @@ class RewardCalculator(object):
 
 class RewardCalculatorforCiderD(object):
     def __init__(self, 
-                 ciderd_df: str="./work_dir/pcap-val-df.p",
+                 ciderd_df: str="./work_dir/pcap-cider-idf.p",
                  eos_token: str="</s>",
                  **kwargs):
         '''
@@ -227,11 +227,47 @@ class RewardCalculatorforCiderD(object):
         elif isinstance(reference, list):
             assert len(reference)==len(ground_truth), \
                 "size of ref list and gt list must be identical"
+            def check_reference(ref):
+                '''
+                check the input to make sure:
+                1) type(ref) is List[str] or List[List[str]]
+                2) if latter, make sure len(ref[i]) for i in range(len(ref)) is identical
+                '''
+                # check1
+                if type(ref[0])==str:
+                    return True
+                elif type(ref[0])==list:
+                    # check2
+                    ref_per_gt=len(ref[0])
+                    len_identical=all(map(lambda x:len(x)==ref_per_gt, ref))
+                    return len_identical
+                
+                return False
             
+            assert check_reference(reference), \
+            '''
+            Assertion Failed probabily due to:
+            1) reference type is neither List[str] nor List[List[str]],
+            2) len(ref[i]) is not identical
+
+            Please check reference and try again.
+            '''
+
+            ref_per_gt=len(reference[0])
+            # unsqueeze reference
+            reference=[ref_one_beam for ref_one in reference for ref_one_beam in ref_one]
+            ground_truth=[ground_truth[i//ref_per_gt] for i in range(len(reference))]
+
             # self.set_ref_and_gts(reference, ground_truth)
-            reference=self.convert_ref(reference)
-            self.ground_truth=self.convert_gts(ground_truth)
-            ciderd=self.ciderd.compute_score(self.ground_truth, reference)
+            with ThreadPoolExecutor(max_workers=2) as thPool:
+                results=[]
+                # tokenized gts for only once          
+                results.append(thPool.submit(self.convert_ref, reference))
+                results.append(thPool.submit(self.convert_gts, ground_truth))
+                ref=results[0].result()
+                gts=results[1].result()
+
+            ciderd=self.ciderd.compute_score(gts, ref)
 
         else:
             raise TypeError("reference expected dict or list, got {}".format(type(reference)))

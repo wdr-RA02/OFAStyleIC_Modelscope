@@ -7,3 +7,6 @@ workspace/
 work_dir/
 
 conf/
+scripts/metrics_params
+scripts/.*
+
