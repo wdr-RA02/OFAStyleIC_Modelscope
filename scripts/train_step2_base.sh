@@ -40,7 +40,7 @@ warm_up=${WARM_UP:-0.02}
 weight_decay=${W_DECAY:-0.001}
 epoch=${EPOCH:-3}
 batch_size=${BATCH:-24}
-batch_size_eval=${BATCH_EVAL:-40}
+batch_size_eval=${BATCH_EVAL:-56}
 workers=${WORKERS:-8}
 FREEZE_RES=${FREEZE_RES:-true}
 

@@ -70,7 +70,6 @@ if [ -f $PARAM_CSV ];then
         if [ -z $params ]; then continue; fi
         # epoches,warm_up,lr,lr_end,weight_decay,batch_size
         IFS=',' read -r epoch warm_up lr lr_end weight_decay batch_size <<< $params
-        batch_size_eval=40
         echo $epoch $warm_up $lr $lr_end $weight_decay $batch_size
         workers=8
         train
@@ -78,8 +77,7 @@ if [ -f $PARAM_CSV ];then
 else
     epoch=5
     IFS=',' read warm_up lr lr_end weight_decay <<< "0.06,2e-05,7.5e-07,0.001"
-    batch_size=24
-    batch_size_eval=32
+    batch_size=12
     workers=8
     train
 fi
