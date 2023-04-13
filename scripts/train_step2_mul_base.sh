@@ -81,7 +81,6 @@ else
     epoch=3
     IFS=',' read warm_up lr lr_end weight_decay <<< "0.06,2e-05,7.5e-07,0.001"
     batch_size=24
-    batch_size_eval=32
     workers=8
     freeze_resnet=false
     train

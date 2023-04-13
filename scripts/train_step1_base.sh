@@ -38,7 +38,7 @@ warm_up=${WARM_UP:-0.01}
 weight_decay=${W_DECAY:-0.001}
 epoch=${EPOCH:-5}
 batch_size=${BATCH:-16}
-batch_size_eval=${BATCH_EVAL:-40}
+batch_size_eval=${BATCH_EVAL:-56}
 workers=${WORKERS:-8}
 
 if $DISP_PARAM
