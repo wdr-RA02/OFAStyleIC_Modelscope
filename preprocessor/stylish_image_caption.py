@@ -6,8 +6,11 @@ from modelscope.preprocessors.builder import PREPROCESSORS
 from modelscope.preprocessors.multi_modal import OfaPreprocessor as OfaPre
 from modelscope.preprocessors.ofa import \
     OfaImageCaptioningPreprocessor as OfaICP
+
+from modelscope.preprocessors.ofa.utils.collate import collate_fn
 from modelscope.utils.constant import Fields, ModeKeys
 from torchvision import transforms
+from torch import tensor
 
 
 # 按照modelscope的要求注册preprocessor
@@ -18,6 +21,7 @@ class OfaPreprocessorforStylishIC(OfaPre):
             model_dir: str, 
             mode=ModeKeys.INFERENCE, 
             cfg_modify_fn: Callable=None,
+            cider=False,
             *args, 
             **kwargs):
         '''
@@ -35,9 +39,11 @@ class OfaPreprocessorforStylishIC(OfaPre):
             # 在trainer就位之前先通过cfg_modify_fn修改好cfg
             self.cfg=self.cfg_modify_fn(self.cfg)
         # 在OFAPreprocessor的基础上修改data preprocessor, key和tokenizer
+        self.cider=cider
         self.preprocess = OfaStylishICPreprocessor(cfg=self.cfg, 
                     model_dir=model_dir, 
-                    mode=mode)
+                    mode=mode,
+                    cider=self.cider)
         # 指定style标签的key
         self.STYLE_KEY = "style"
         self.tokenize_style=self.preprocess.tokenize_style
@@ -45,7 +51,9 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # add "style" key to self.keys
         if not self.STYLE_KEY in self.keys:
             self.keys.append(self.STYLE_KEY)
+        # different training steps require different method
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
+        print("CIDEr finetune: {}".format(self.cider))
 
 
     def __call__(self, 
@@ -54,8 +62,27 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # 对于hf datasets的map函数, 要特别处理一下input
         if isinstance(input, LazyDict):
             input=dict(input)
-        # 暂时先不修改父类的call函数
-        return super().__call__(input, *args, **kwargs)
+        # 因为添加了ITM任务, 所以需要把基类的call函数照抄过来修改一下
+        # 主要是把[sample]那里改掉
+        # return super().__call__(input, *args, **kwargs)
+        if isinstance(input, dict):
+            data = input
+        else:
+            data = self._build_dict(input)
+        sample = self.preprocess(data)
+        # sample=[(CAP_0,ITM_0), (CAP_1,ITM_1), ...]
+        str_data = dict()
+        for k, v in data.items():
+            str_data[k] = str(v)
+        # print(sample, type(sample))
+        for item in sample:
+            item['sample'] = str_data
+        if self.no_collate:
+            return sample
+        else:
+            return collate_fn([item for item in sample],
+                              pad_idx=self.tokenizer.pad_token_id,
+                              eos_idx=self.tokenizer.eos_token_id)
     
 class OfaStylishICPreprocessor(OfaICP):
     '''
@@ -65,7 +92,8 @@ class OfaStylishICPreprocessor(OfaICP):
     def __init__(self,
                 cfg, 
                 model_dir,
-                mode=ModeKeys.INFERENCE, 
+                mode=ModeKeys.INFERENCE,
+                cider=False, 
                 *args, 
                 **kwargs):
         '''
@@ -94,6 +122,7 @@ class OfaStylishICPreprocessor(OfaICP):
         # style tokenizer
         self.style_dict = None
         self.tokenize_style = False
+        self.cider=cider
 
         self.STYLE_KEY="style"
 
@@ -101,7 +130,11 @@ class OfaStylishICPreprocessor(OfaICP):
                 data: Dict[str, Any]) -> Dict[str, Any]:
         
         assert self.STYLE_KEY in data
-        return super().__call__(data)
+        # since data_collate fn needs changing, all output need to be tuple
+        sample=super().__call__(data)
+        if not isinstance(sample, tuple):
+            sample=(sample, )
+        return sample
     
     def add_style_token(self, style_dict: Dict[str, str]):
         self.style_dict = style_dict
@@ -110,6 +143,22 @@ class OfaStylishICPreprocessor(OfaICP):
         self.tokenizer.add_tokens(list(self.style_dict.values()))
         # open the token mode
         self.tokenize_style = isinstance(self.style_dict, dict)
+
+    def _build_train_sample(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # caption task
+        sample_caption=super()._build_train_sample(data)
+        # add weight
+        sample_caption["conf"]=tensor([1.0])
+
+        #
+        sample_itm=None
+        # output sample
+        if self.cider:
+            sample=(sample_caption, )
+        else:
+            sample=(sample_caption, )
+
+        return sample
 
     def _build_infer_sample(
                 self, 
@@ -135,6 +184,8 @@ class OfaStylishICPreprocessor(OfaICP):
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
+        # weight
+
         return sample
     
 

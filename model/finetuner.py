@@ -1,4 +1,5 @@
 from time import sleep
+
 from .scst_criterion import SCSTCriterion
 from .utils import generate_preprocessors
 from .utils.constants import *
@@ -6,6 +7,7 @@ from .utils.build_dataset import generate_ready_ds
 from modelscope.trainers import build_trainer
 from modelscope.metainfo import Trainers
 from modelscope.trainers.multi_modal import OFATrainer
+from modelscope.models.multi_modal.ofa import OFATokenizer
 from modelscope.models.multi_modal import OfaForAllTasks
 
 def generate_trainer(train_conf: Dict[str, str], 
@@ -45,7 +47,9 @@ def generate_trainer(train_conf: Dict[str, str],
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
                                             from_pretrained,
-                                            mod_fn=mod_fn),
+                                            mod_fn=mod_fn,
+                                            cider=use_cider),
+        data_collator=build_collator(model_dir, rev=train_conf["model_revision"]),
         launcher="pytorch"
     )
     trainer = build_trainer(name=Trainers.ofa, default_args=args)
