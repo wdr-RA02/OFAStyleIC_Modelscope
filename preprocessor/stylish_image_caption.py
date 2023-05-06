@@ -1,3 +1,5 @@
+import random
+
 from typing import Any, Callable, Dict, Union
 
 from datasets.formatting.formatting import LazyDict
@@ -10,7 +12,7 @@ from modelscope.preprocessors.ofa import \
 from modelscope.preprocessors.ofa.utils.collate import collate_fn
 from modelscope.utils.constant import Fields, ModeKeys
 from torchvision import transforms
-from torch import tensor
+from torch import tensor, cat
 
 
 # 按照modelscope的要求注册preprocessor
@@ -53,7 +55,8 @@ class OfaPreprocessorforStylishIC(OfaPre):
             self.keys.append(self.STYLE_KEY)
         # different training steps require different method
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
-        print("CIDEr finetune: {}".format(self.cider))
+        if mode==ModeKeys.TRAIN:
+            print("CIDEr finetune: {}".format(self.cider))
 
 
     def __call__(self, 
@@ -94,6 +97,7 @@ class OfaStylishICPreprocessor(OfaICP):
                 model_dir,
                 mode=ModeKeys.INFERENCE,
                 cider=False, 
+                style_token="<code_{}>",
                 *args, 
                 **kwargs):
         '''
@@ -123,6 +127,7 @@ class OfaStylishICPreprocessor(OfaICP):
         self.style_dict = None
         self.tokenize_style = False
         self.cider=cider
+        self.style_token=style_token
 
         self.STYLE_KEY="style"
 
@@ -150,13 +155,70 @@ class OfaStylishICPreprocessor(OfaICP):
         # add weight
         sample_caption["conf"]=tensor([1.0])
 
-        #
-        sample_itm=None
+        # randomly selects another style
+        pos_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict))) if self.tokenize_style \
+                  else data[self.STYLE_KEY]
+        while True:
+            # tokenize the style for comparison
+            if not self.tokenize_style:
+                orig_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict)))
+            else:
+                orig_style=pos_style
+            other_style=random.randint(0,len(self.style_dict)-1)
+            if self.style_token.format(other_style)!=orig_style:
+                break
+        
+        # if we choose not to tokenize style, we need to check the item style
+        if self.tokenize_style:
+            other_style=self.style_token.format(other_style)
+        else:
+            other_style=list(self.style_dict.keys())[other_style]
+        
+        # itm sample
+        # replies
+        itm_reply=[" yes", " no", " personality"]
+        itm_caption_src=sample_caption["label"]
+        itm_style=pos_style
+
+        roulette=random.random()
+        if roulette<=0.5:
+            # keep everything as is
+            itm_target=self.tokenize_text(itm_reply[0], add_bos=False)
+        elif 0.5<roulette<=0.75:
+            # mess up the caption
+            # TODO: random select negative captions
+            itm_caption_src=sample_caption["label"]
+            # also change the index below
+            itm_target=self.tokenize_text(itm_reply[0], add_bos=False)
+        else:
+            # mess up the style
+            itm_style=other_style
+            itm_target=self.tokenize_text(itm_reply[2], add_bos=False)
+
+        itm_prev=cat([self.bos_item, itm_target[:-1]])
+        # strip the caption
+        itm_caption = itm_caption_src.translate(self.transtab).strip()
+        cap_token_list = itm_caption.strip().split()
+        itm_caption = ' '.join(cap_token_list[:self.max_tgt_length-10])
+        # prompt
+        itm_prompt=self.tokenize_text(' does the image describe " {} " in personality {}?'.format(itm_caption, itm_style))
+        
+        sample_itm={
+            "patch_image": sample_caption["patch_image"],
+            "patch_mask": sample_caption["patch_mask"],
+            "conf": tensor([0.6]),
+            "source": itm_prompt,
+            "target": itm_target,
+            "prev_output_tokens": itm_prev,
+            "label": None
+            # target :" yes/no/personality</s>"
+            # prev_output_tokens
+        }
         # output sample
         if self.cider:
             sample=(sample_caption, )
         else:
-            sample=(sample_caption, )
+            sample=(sample_caption, sample_itm)
 
         return sample
 
@@ -173,18 +235,17 @@ class OfaStylishICPreprocessor(OfaICP):
 
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
-        new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
+        new_prompt=self.cfg.model.get("prompt", " what does the image describe? reply in personality {}.")
         # get current style
         # for unknown style, we use <code_i+1> instead of <unk>
-        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<code_{}>".format(len(self.style_dict))) if self.tokenize_style \
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict))) if self.tokenize_style \
                   else data[self.STYLE_KEY]
         # 教训惨痛, 遂决定添加warning
-        if cur_style=="<code_{}>".format(len(self.style_dict)):
+        if cur_style==self.style_token.format(len(self.style_dict)):
             print("WARNING: Got unknown style token, check orig: {}".format(data[self.STYLE_KEY]))
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
-        # weight
 
         return sample
     
