@@ -69,9 +69,9 @@ if [ -f $PARAM_CSV ];then
     do
         if [ -z $params ]; then continue; fi
         # epoches,warm_up,lr,lr_end,weight_decay,batch_size
-        IFS=',' read -r epoch warm_up lr lr_end weight_decay batch_size <<< $params
-        echo $epoch $warm_up $lr $lr_end $weight_decay $batch_size
-        workers=8
+        IFS=',' read -r epoch warm_up lr lr_end weight_decay batch_size workers <<< $params
+        batch_size_eval=$((10#$batch_size*2))
+        echo $epoch $warm_up $lr $lr_end $weight_decay $batch_size $workers
         train
     done
 else
