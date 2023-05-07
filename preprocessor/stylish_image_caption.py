@@ -68,24 +68,28 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # 因为添加了ITM任务, 所以需要把基类的call函数照抄过来修改一下
         # 主要是把[sample]那里改掉
         # return super().__call__(input, *args, **kwargs)
-        if isinstance(input, dict):
-            data = input
+        if self.mode!=ModeKeys.INFERENCE:
+            if isinstance(input, dict):
+                data = input
+            else:
+                data = self._build_dict(input)
+            sample = self.preprocess(data)
+            # sample=[(CAP_0,ITM_0), (CAP_1,ITM_1), ...]
+            str_data = dict()
+            for k, v in data.items():
+                str_data[k] = str(v)
+            # print(sample, type(sample))
+            for item in sample:
+                item['sample'] = str_data
+            if self.no_collate:
+                return sample
+            else:
+                return collate_fn([item for item in sample],
+                                pad_idx=self.tokenizer.pad_token_id,
+                                eos_idx=self.tokenizer.eos_token_id)
         else:
-            data = self._build_dict(input)
-        sample = self.preprocess(data)
-        # sample=[(CAP_0,ITM_0), (CAP_1,ITM_1), ...]
-        str_data = dict()
-        for k, v in data.items():
-            str_data[k] = str(v)
-        # print(sample, type(sample))
-        for item in sample:
-            item['sample'] = str_data
-        if self.no_collate:
-            return sample
-        else:
-            return collate_fn([item for item in sample],
-                              pad_idx=self.tokenizer.pad_token_id,
-                              eos_idx=self.tokenizer.eos_token_id)
+            # for inference mode, just use the original call method
+            return super().__call__(input)
     
 class OfaStylishICPreprocessor(OfaICP):
     '''
@@ -137,7 +141,9 @@ class OfaStylishICPreprocessor(OfaICP):
         assert self.STYLE_KEY in data
         # since data_collate fn needs changing, all output need to be tuple
         sample=super().__call__(data)
-        if not isinstance(sample, tuple):
+
+        # inference mode does not require 'sample' to be tuple
+        if self.mode!=ModeKeys.INFERENCE and not isinstance(sample, tuple):
             sample=(sample, )
         return sample
     
