@@ -4,7 +4,9 @@ __pycache__/
 
 /trainer_config.json
 workspace/
+workspace
 work_dir/
+work_dir
 
 conf/
 scripts/metrics_params
