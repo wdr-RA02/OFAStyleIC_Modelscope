@@ -4,15 +4,25 @@
 if [ -z $(which conda) ]
 then
     echo "conda not exist in your system. "
-    return
+    return 2
+else
+    # if we use 'conda xxx', it will cause the false blank of $(which conda)
+    CONDA_BIN_DIR=$(dirname $(which conda))/../bin
+    CONDA_ENV="$CONDA_BIN_DIR/conda-env"
+    CONDA_ACT="source $CONDA_BIN_DIR/activate"
 fi
 
 export CODE_DIR=$HOME/codes/OFAStyle
+if [ ! -e $CODE_DIR ]
+then
+    echo "CODE_DIR $CODE_DIR does not exist. "
+    return 3
+fi
 echo "Set code dir to $CODE_DIR"
 
 function set_anaconda_env()
 {
-    env_lists=$(conda env list | tail -n+3 | awk '{print $1}')
+    env_lists=$($CONDA_ENV list | tail -n+3 | awk '{print $1}')
     PS3="Please specify an environment to activate, Ctrl-C to exit: "
     select env in ${env_lists[@]}
     do
@@ -20,7 +30,7 @@ function set_anaconda_env()
         then 
             echo "Invalid option. "
         else
-            conda activate $env
+            $CONDA_ACT $env
             echo "Activated environment $env"
             break
         fi
