@@ -180,6 +180,11 @@ class OfaStylishICPreprocessor(OfaICP):
         else:
             other_style=list(self.style_dict.keys())[other_style]
         
+        # if scst is adopted, then we should quit asap
+        if self.cider:
+            sample=(sample_caption, )
+            return sample
+        
         # itm sample
         # replies
         itm_reply=[" yes", " no", " personality"]
@@ -193,9 +198,9 @@ class OfaStylishICPreprocessor(OfaICP):
         elif 0.5<roulette<=0.75:
             # mess up the caption
             # TODO: random select negative captions
-            itm_caption_src=sample_caption["label"]
+            itm_caption_src=random.choice(data["negative_caps"])
             # also change the index below
-            itm_target=self.tokenize_text(itm_reply[0], add_bos=False)
+            itm_target=self.tokenize_text(itm_reply[1], add_bos=False)
         else:
             # mess up the style
             itm_style=other_style
@@ -221,10 +226,7 @@ class OfaStylishICPreprocessor(OfaICP):
             # prev_output_tokens
         }
         # output sample
-        if self.cider:
-            sample=(sample_caption, )
-        else:
-            sample=(sample_caption, sample_itm)
+        sample=(sample_caption, sample_itm)
 
         return sample
 

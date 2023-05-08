@@ -1,5 +1,5 @@
 from .constants import *
-from preprocessor import OfaPreprocessorforStylishIC
+from ..preprocessor import OfaPreprocessorforStylishIC
 
 def generate_preprocessors(train_conf: dict,
                            from_pretrained: str=None,
