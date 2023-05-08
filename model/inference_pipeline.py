@@ -6,7 +6,7 @@ from modelscope.pipelines import pipeline
 from metric import stylish_ic_metric
 from .utils.constants import *
 from .utils.build_dataset import generate_msdataset, collate_pcaption_dataset
-from preprocessor import OfaPreprocessorforStylishIC
+from model.preprocessor import OfaPreprocessorforStylishIC
 
 
 def get_eval_batch(train_conf: dict,
