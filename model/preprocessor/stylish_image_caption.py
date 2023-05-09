@@ -23,7 +23,6 @@ class OfaPreprocessorforStylishIC(OfaPre):
             model_dir: str, 
             mode=ModeKeys.INFERENCE, 
             cfg_modify_fn: Callable=None,
-            use_itm=False,
             *args, 
             **kwargs):
         '''
@@ -41,11 +40,9 @@ class OfaPreprocessorforStylishIC(OfaPre):
             # 在trainer就位之前先通过cfg_modify_fn修改好cfg
             self.cfg=self.cfg_modify_fn(self.cfg)
         # 在OFAPreprocessor的基础上修改data preprocessor, key和tokenizer
-        self.itm=use_itm
         self.preprocess = OfaStylishICPreprocessor(cfg=self.cfg, 
                     model_dir=model_dir, 
-                    mode=mode,
-                    use_itm=self.itm)
+                    mode=mode)
         # 指定style标签的key
         self.STYLE_KEY = "style"
         self.tokenize_style=self.preprocess.tokenize_style
@@ -55,8 +52,6 @@ class OfaPreprocessorforStylishIC(OfaPre):
             self.keys.append(self.STYLE_KEY)
         # different training steps require different method
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
-        if mode==ModeKeys.TRAIN:
-            print("ITM in task: {}".format(self.itm))
 
 
     def __call__(self, 
@@ -100,7 +95,6 @@ class OfaStylishICPreprocessor(OfaICP):
                 cfg, 
                 model_dir,
                 mode=ModeKeys.INFERENCE,
-                use_itm=False, 
                 style_token="<code_{}>",
                 *args, 
                 **kwargs):
@@ -130,10 +124,20 @@ class OfaStylishICPreprocessor(OfaICP):
         # style tokenizer
         self.style_dict = None
         self.tokenize_style = False
-        self.itm=use_itm
         self.style_token=style_token
 
         self.STYLE_KEY="style"
+
+        if self.mode==ModeKeys.TRAIN:
+            # get itm properties
+            itm_prop=self.cfg.train.get("itm", {"enable": False, "task_weight": 1.0})
+            self.itm=itm_prop["enable"]
+            self.itm_weight=itm_prop["task_weight"]
+            
+            print("ITM in task: {}".format(self.itm))
+            if self.itm:
+                print("ITM Task weight: {}".format(self.itm_weight))
+
 
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:
@@ -181,7 +185,7 @@ class OfaStylishICPreprocessor(OfaICP):
             other_style=list(self.style_dict.keys())[other_style]
         
         # if scst is adopted, then we should quit asap
-        if self.itm:
+        if not self.itm:
             sample=(sample_caption, )
             return sample
         
@@ -217,7 +221,7 @@ class OfaStylishICPreprocessor(OfaICP):
         sample_itm={
             "patch_image": sample_caption["patch_image"],
             "patch_mask": sample_caption["patch_mask"],
-            "conf": tensor([0.6]),
+            "conf": tensor([self.itm_weight]),
             "source": itm_prompt,
             "target": itm_target,
             "prev_output_tokens": itm_prev,

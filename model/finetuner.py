@@ -47,8 +47,7 @@ def generate_trainer(train_conf: Dict[str, str],
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
                                             from_pretrained,
-                                            mod_fn=mod_fn,
-                                            use_itm=use_cider),
+                                            mod_fn=mod_fn),
         data_collator=build_collator(model_dir, rev=train_conf["model_revision"]),
         launcher="pytorch"
     )

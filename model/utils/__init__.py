@@ -3,8 +3,7 @@ from ..preprocessor import OfaPreprocessorforStylishIC
 
 def generate_preprocessors(train_conf: dict,
                            from_pretrained: str=None,
-                           mod_fn: Callable = None,
-                           use_itm: bool=False):
+                           mod_fn: Callable = None):
     '''
     生成preprocessor
 
@@ -31,7 +30,6 @@ def generate_preprocessors(train_conf: dict,
                 model_dir=model_dir,
                 cfg_modify_fn=mod_fn,
                 mode=ModeKeys.TRAIN, 
-                use_itm=use_itm,
                 no_collate=True),
         ConfigKeys.val:
             OfaPreprocessorforStylishIC(
