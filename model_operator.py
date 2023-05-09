@@ -1,8 +1,10 @@
 import argparse
 
 def train_fn(args):
+    global parser
     if args.cider and args.checkpoint is None:
-        raise argparse.ArgumentError("a checkpoint must be specified when using CIDEr finetuning")
+        parser.error("a checkpoint must be specified when using CIDEr finetuning")
+        
     global mod_fn
     from model.finetuner import train
     train(args, mod_fn, use_cider_scst=args.cider)
