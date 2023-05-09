@@ -13,14 +13,27 @@ fi
 CURRENT_DIR=$(cd $(dirname $0);pwd)
 CUDA_NUM=$(echo $CUDA_GPUS | awk -F, "{print NF}")
 TAR_PREFIX=${TAR_PREFIX:-"base_pt"}
-[ -z $CODE_DIR ] && (echo '$CODE_DIR is not defined, run source set_env.sh first!'; exit 1)
+# exit if code_dir is not defined
+if [ -z $CODE_DIR ]
+then echo 'env CODE_DIR is not defined, run source set_env.sh first!'; exit 1
+fi
+
 MODEL_OP=$CODE_DIR/model_operator.py
 DISP_PARAM=${DISP_PARAM:-true}
 
+# itm task marker
+ITM_TASK=${ITM_TASK:-false}
+ITM_WEIGHT=${ITM_WEIGHT:-1.0}
 
-CONF=${CONF:-$CODE_DIR/conf/scst_test/base_lr1e-5.json}
+CONF=${CONF:-$CODE_DIR/conf/debug/debug_xe.json}
 WORK_DIR=$(jq ."work_dir" $CONF | sed -e "s#.*/.*#\0#g" -e "s#\.#$CODE_DIR#g" -e "s#\"##g")
+# exit if conf is not correctly read
+if [ $? != 0 ];then exit $?;fi
 WORK_DIR=${WORK_DIR:0:-1}
+
+# add itm suffix
+if $ITM_TASK; then TAR_PREFIX="${TAR_PREFIX}_itm";fi
+
 CSV_FILENAME=${CSV_FILENAME:-"$CURRENT_DIR/metrics_params/${TAR_PREFIX}_step1.csv"}
 DOC_FILEDIR=${DOC_FILEDIR:-$CURRENT_DIR/.max_cider_$TAR_PREFIX}
 ckpt=${CKPT_DIR:-"$CODE_DIR/work_dir/pretrained/bare_model/output"}
@@ -47,6 +60,13 @@ then
     do echo $x;
     done
 fi
+
+# ITM Indicator
+printf "ITM Task Enabled: %s\n" $ITM_TASK
+if $ITM_TASK
+then printf "ITM Task weight: %.1f\n" $ITM_WEIGHT
+fi
+
 # train
 echo $CUDA_GPUS
 base_command="torchrun --rdzv_backend c10d \
@@ -60,6 +80,15 @@ base_command="torchrun --rdzv_backend c10d \
         --max_epoches $epoch \
         --batch_size $batch_size \
         --num_workers $workers"
+
+if $ITM_TASK
+then
+    # insert itm related command
+    base_command="$base_command \
+                --itm \
+                --itm_alpha $ITM_WEIGHT"
+    
+fi
 
 CUDA_VISIBLE_DEVICES=$CUDA_GPUS $base_command --checkpoint $ckpt
 
