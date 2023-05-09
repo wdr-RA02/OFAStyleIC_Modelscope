@@ -1,5 +1,6 @@
 import os
 import json
+from tkinter import N
 
 def load_train_conf(train_conf_filename: str):
     '''
@@ -100,7 +101,7 @@ def cfg_modify_fn(args):
     # itm task
     itm=getattr(args, "itm", None)
     if itm is not None:
-        itm_weight=args.itm_alpha
+        itm_weight = args.itm_alpha if args.itm_alpha is not None else 1.0
 
     # ckpt hook may be changed based on whether scst is adpoted
     ckpt_hook={

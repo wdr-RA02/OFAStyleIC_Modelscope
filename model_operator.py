@@ -52,7 +52,7 @@ if __name__=="__main__":
     train_tasks=train_parser.add_mutually_exclusive_group()
     train_tasks.add_argument("--cider", help="Execute CIDEr SCST finetune (experimental)", action="store_true")
     train_tasks.add_argument("--itm", help="Perform Image-text Matching pretrain task", action="store_true")
-    train_parser.add_argument("--itm_alpha", help="Alpha weight for ITM task loss", default=1.0, type=float)
+    train_parser.add_argument("--itm_alpha", help="Alpha weight for ITM task loss", type=float)
 
 
     eval_parser=sub_parser.add_parser("eval", help="loads evaluator")
