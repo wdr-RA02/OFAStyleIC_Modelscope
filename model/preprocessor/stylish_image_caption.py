@@ -23,7 +23,7 @@ class OfaPreprocessorforStylishIC(OfaPre):
             model_dir: str, 
             mode=ModeKeys.INFERENCE, 
             cfg_modify_fn: Callable=None,
-            cider=False,
+            use_itm=False,
             *args, 
             **kwargs):
         '''
@@ -41,11 +41,11 @@ class OfaPreprocessorforStylishIC(OfaPre):
             # 在trainer就位之前先通过cfg_modify_fn修改好cfg
             self.cfg=self.cfg_modify_fn(self.cfg)
         # 在OFAPreprocessor的基础上修改data preprocessor, key和tokenizer
-        self.cider=cider
+        self.itm=use_itm
         self.preprocess = OfaStylishICPreprocessor(cfg=self.cfg, 
                     model_dir=model_dir, 
                     mode=mode,
-                    cider=self.cider)
+                    use_itm=self.itm)
         # 指定style标签的key
         self.STYLE_KEY = "style"
         self.tokenize_style=self.preprocess.tokenize_style
@@ -56,7 +56,7 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # different training steps require different method
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
         if mode==ModeKeys.TRAIN:
-            print("CIDEr finetune: {}".format(self.cider))
+            print("ITM in task: {}".format(self.itm))
 
 
     def __call__(self, 
@@ -100,7 +100,7 @@ class OfaStylishICPreprocessor(OfaICP):
                 cfg, 
                 model_dir,
                 mode=ModeKeys.INFERENCE,
-                cider=False, 
+                use_itm=False, 
                 style_token="<code_{}>",
                 *args, 
                 **kwargs):
@@ -130,7 +130,7 @@ class OfaStylishICPreprocessor(OfaICP):
         # style tokenizer
         self.style_dict = None
         self.tokenize_style = False
-        self.cider=cider
+        self.itm=use_itm
         self.style_token=style_token
 
         self.STYLE_KEY="style"
@@ -181,7 +181,7 @@ class OfaStylishICPreprocessor(OfaICP):
             other_style=list(self.style_dict.keys())[other_style]
         
         # if scst is adopted, then we should quit asap
-        if self.cider:
+        if self.itm:
             sample=(sample_caption, )
             return sample
         
