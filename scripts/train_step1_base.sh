@@ -32,7 +32,13 @@ if [ $? != 0 ];then exit $?;fi
 WORK_DIR=${WORK_DIR:0:-1}
 
 # add itm suffix
-if $ITM_TASK; then TAR_PREFIX="${TAR_PREFIX}_itm";fi
+if $ITM_TASK
+then 
+    # don't add '_itm' when exec from mul.sh
+    if [ ! ${TAR_PREFIX:0-4:4} == "_itm" ]
+    then TAR_PREFIX="${TAR_PREFIX}_itm"
+    fi
+fi
 
 CSV_FILENAME=${CSV_FILENAME:-"$CURRENT_DIR/metrics_params/${TAR_PREFIX}_step1.csv"}
 DOC_FILEDIR=${DOC_FILEDIR:-$CURRENT_DIR/.max_cider_$TAR_PREFIX}
