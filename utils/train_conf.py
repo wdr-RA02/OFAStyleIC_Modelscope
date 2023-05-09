@@ -112,7 +112,7 @@ def cfg_modify_fn(args):
     def mod_fn(cfg):
         # required by p_cap
         # add prompt config
-        if prompt is not None and len(prompt)!="":
+        if prompt is not None and len(prompt)>0:
             cfg.merge_from_dict({"model.prompt": prompt})
         cfg.model.patch_image_size=patch_img_size
         cfg.model.max_image_size=max_img_size
