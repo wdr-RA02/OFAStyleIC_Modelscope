@@ -97,6 +97,11 @@ def cfg_modify_fn(args):
     max_len=getattr(args,"max_len",None)
     beam_size=getattr(args,"beam_size",None)
 
+    # itm task
+    itm=getattr(args, "itm", None)
+    if itm is not None:
+        itm_weight=args.itm_alpha
+
     # ckpt hook may be changed based on whether scst is adpoted
     ckpt_hook={
             'type': 'CheckpointHook',
@@ -140,6 +145,15 @@ def cfg_modify_fn(args):
             cfg.train.optimizer.lr=lr
         if weight_decay is not None:
             cfg.train.optimizer.weight_decay=weight_decay
+        
+        # itm task
+        if itm is not None:
+            cfg.merge_from_dict({
+                "train.itm": {
+                    "enable": itm,
+                    "task_weight": itm_weight
+                }
+            })
         # set up batch and workers
         cfg.train.dataloader.batch_size_per_gpu=batch_size
         cfg.train.dataloader.workers_per_gpu=num_workers
