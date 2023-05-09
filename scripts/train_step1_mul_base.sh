@@ -7,9 +7,13 @@ fi
 
 CUDA_NUM=`echo $CUDA_GPUS | awk -F, "{print NF}"`
 CURRENT_DIR=`cd $(dirname $0);pwd`
-[ -z $CODE_DIR ] && (echo '$CODE_DIR is not defined, run source set_env.sh first!'; exit 1)
+# exit if code_dir is not defined
+if [ -z $CODE_DIR ]
+then echo 'env CODE_DIR is not defined, run source set_env.sh first!'; exit 1
+fi
+
 # file related consts
-TAR_PREFIX=baseline
+TAR_PREFIX="baseline"
 doc="$CURRENT_DIR/.max_cider_$TAR_PREFIX"
 csv="$CURRENT_DIR/metrics_params/$TAR_PREFIX.csv"
 conf=$CODE_DIR/conf/base_tokenized_pt.json
@@ -75,6 +79,15 @@ if [ -f $PARAM_CSV ];then
         train
     done
 else
+    read -p "File ${PARAM_CSV} does not exist. Would you like to quit? (Y/n): " file_quit
+    case $file_quit in
+        [yY])
+            exit 2
+            ;;
+        *)
+            echo "Use default params to train"
+            ;;
+    esac
     epoch=5
     IFS=',' read warm_up lr lr_end weight_decay <<< "0.06,2e-05,7.5e-07,0.001"
     batch_size=12

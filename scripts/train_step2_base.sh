@@ -13,13 +13,18 @@ fi
 CURRENT_DIR=$(cd $(dirname $0);pwd)
 CUDA_NUM=$(echo $CUDA_GPUS | awk -F, "{print NF}")
 TAR_PREFIX=${TAR_PREFIX:-"base_pt"}
-[ -z $CODE_DIR ] && (echo '$CODE_DIR is not defined, run source set_env.sh first!'; exit 1)
+# exit if code_dir is not defined
+if [ -z $CODE_DIR ]
+then echo 'env CODE_DIR is not defined, run source set_env.sh first!'; exit 1
+fi
 MODEL_OP=$CODE_DIR/model_operator.py
 DISP_PARAM=${DISP_PARAM:-true}
 
 CONF=${CONF:-$CODE_DIR/conf/scst_test/base_lr1e-5.json}
 CKPT_DIR=${CKPT_DIR:-$CODE_DIR/work_dir/pretrained/base_pt}
 WORK_DIR=$(jq ."work_dir" $CONF | sed -e "s#.*/.*#\0#g" -e "s#\.#$CODE_DIR#g" -e "s#\"##g")
+# exit if conf is not correctly read
+if [ $? != 0 ];then exit $?;fi
 WORK_DIR=${WORK_DIR::-1}
 SAVE_DIR=$WORK_DIR/saved_models
 
