@@ -101,6 +101,15 @@ if [ -f $PARAM_CSV ];then
         train
     done
 else
+    read -p "File ${PARAM_CSV} does not exist. Would you like to quit? (Y/n): " file_quit
+    case $file_quit in
+        [yY])
+            exit 2
+            ;;
+        *)
+            echo "Use default params to train"
+            ;;
+    esac
     epoch=5
     IFS=',' read warm_up lr lr_end weight_decay <<< "0.06,2e-05,7.5e-07,0.001"
     batch_size=12
