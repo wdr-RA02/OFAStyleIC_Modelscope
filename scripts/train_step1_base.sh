@@ -59,13 +59,13 @@ then
     for x in $lr $lr_end $warm_up $weight_decay $batch_size;
     do echo $x;
     done
+    # ITM Indicator
+    printf "ITM Task Enabled: %s\n" $ITM_TASK
+    if $ITM_TASK
+    then printf "ITM Task weight: %.1f\n" $ITM_WEIGHT
+    fi
 fi
 
-# ITM Indicator
-printf "ITM Task Enabled: %s\n" $ITM_TASK
-if $ITM_TASK
-then printf "ITM Task weight: %.1f\n" $ITM_WEIGHT
-fi
 
 # train
 echo $CUDA_GPUS

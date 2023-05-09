@@ -7,9 +7,29 @@ fi
 
 CUDA_NUM=`echo $CUDA_GPUS | awk -F, "{print NF}"`
 CURRENT_DIR=`cd $(dirname $0);pwd`
-[ -z $CODE_DIR ] && (echo '$CODE_DIR is not defined, run source set_env.sh first!'; exit 1)
+# exit if code_dir is not defined
+if [ -z $CODE_DIR ]
+then echo 'env CODE_DIR is not defined, run source set_env.sh first!'; exit 1
+fi
+
+# indicate ITM task
+read -p "Add ITM to training tasks? (y/N): " itm
+case $itm in
+    [yY])
+        itm=true
+        ;;
+    [nN])
+        itm=false
+        ;;
+    *)
+        echo "Unknown input, defaulting to ITM=false..."
+        ;;
+esac
+
 # file related consts
-TAR_PREFIX=baseline
+TAR_PREFIX="baseline"
+if $itm; then TAR_PREFIX="${TAR_PREFIX}_itm"; fi
+
 doc="$CURRENT_DIR/.max_cider_$TAR_PREFIX"
 csv="$CURRENT_DIR/metrics_params/$TAR_PREFIX.csv"
 conf=$CODE_DIR/conf/base_tokenized_pt.json
@@ -57,6 +77,8 @@ function train()
     CONF=$conf \
     CKPT_DIR=$ckpt \
     DISP_PARAM=false \
+    ITM_TASK=$itm \
+    ITM_WEIGHT=$itm_weight \
     bash $CURRENT_DIR/train_step1_base.sh $CUDA_GPUS
 }
 
@@ -69,9 +91,13 @@ if [ -f $PARAM_CSV ];then
     do
         if [ -z $params ]; then continue; fi
         # epoches,warm_up,lr,lr_end,weight_decay,batch_size
-        IFS=',' read -r epoch warm_up lr lr_end weight_decay batch_size workers <<< $params
+        IFS=',' read -r epoch warm_up lr lr_end weight_decay batch_size workers itm_weight <<< $params
         batch_size_eval=$((10#$batch_size*2))
         echo $epoch $warm_up $lr $lr_end $weight_decay $batch_size $workers
+
+        # ITM Indicator
+        printf "ITM Task Enabled: %s\n" $itm
+        if $itm; then printf "ITM Task weight: %.1f\n" $itm_weight; fi
         train
     done
 else
