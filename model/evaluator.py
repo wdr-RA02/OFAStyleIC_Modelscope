@@ -22,7 +22,8 @@ def start_evaluate(train_conf: dict,
         eval_dataset=eval_ds,
         cfg_modify_fn=mod_fn,
         preprocessor=generate_preprocessors(train_conf,
-                                            mod_fn=mod_fn)
+                                            mod_fn=mod_fn),
+        data_collator=build_collator(model_dir, rev=train_conf["model_revision"])
     )
     trainer=build_trainer(name=Trainers.ofa, default_args=args)
     assert type(trainer)==OFATrainer

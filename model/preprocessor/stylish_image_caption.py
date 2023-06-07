@@ -1,3 +1,5 @@
+import random
+
 from typing import Any, Callable, Dict, Union
 
 from datasets.formatting.formatting import LazyDict
@@ -6,8 +8,11 @@ from modelscope.preprocessors.builder import PREPROCESSORS
 from modelscope.preprocessors.multi_modal import OfaPreprocessor as OfaPre
 from modelscope.preprocessors.ofa import \
     OfaImageCaptioningPreprocessor as OfaICP
+
+from modelscope.preprocessors.ofa.utils.collate import collate_fn
 from modelscope.utils.constant import Fields, ModeKeys
 from torchvision import transforms
+from torch import tensor, cat
 
 
 # 按照modelscope的要求注册preprocessor
@@ -45,6 +50,7 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # add "style" key to self.keys
         if not self.STYLE_KEY in self.keys:
             self.keys.append(self.STYLE_KEY)
+        # different training steps require different method
         print(f"OFAPpSIC registered, model_dir:{model_dir}")
 
 
@@ -54,8 +60,31 @@ class OfaPreprocessorforStylishIC(OfaPre):
         # 对于hf datasets的map函数, 要特别处理一下input
         if isinstance(input, LazyDict):
             input=dict(input)
-        # 暂时先不修改父类的call函数
-        return super().__call__(input, *args, **kwargs)
+        # 因为添加了ITM任务, 所以需要把基类的call函数照抄过来修改一下
+        # 主要是把[sample]那里改掉
+        # return super().__call__(input, *args, **kwargs)
+        if self.mode!=ModeKeys.INFERENCE:
+            if isinstance(input, dict):
+                data = input
+            else:
+                data = self._build_dict(input)
+            sample = self.preprocess(data)
+            # sample=[(CAP_0,ITM_0), (CAP_1,ITM_1), ...]
+            str_data = dict()
+            for k, v in data.items():
+                str_data[k] = str(v)
+            # print(sample, type(sample))
+            for item in sample:
+                item['sample'] = str_data
+            if self.no_collate:
+                return sample
+            else:
+                return collate_fn([item for item in sample],
+                                pad_idx=self.tokenizer.pad_token_id,
+                                eos_idx=self.tokenizer.eos_token_id)
+        else:
+            # for inference mode, just use the original call method
+            return super().__call__(input)
     
 class OfaStylishICPreprocessor(OfaICP):
     '''
@@ -65,7 +94,8 @@ class OfaStylishICPreprocessor(OfaICP):
     def __init__(self,
                 cfg, 
                 model_dir,
-                mode=ModeKeys.INFERENCE, 
+                mode=ModeKeys.INFERENCE,
+                style_token="<code_{}>",
                 *args, 
                 **kwargs):
         '''
@@ -94,14 +124,32 @@ class OfaStylishICPreprocessor(OfaICP):
         # style tokenizer
         self.style_dict = None
         self.tokenize_style = False
+        self.style_token=style_token
 
         self.STYLE_KEY="style"
+
+        if self.mode==ModeKeys.TRAIN:
+            # get itm properties
+            itm_prop=self.cfg.train.get("itm", {"enable": False, "task_weight": 1.0})
+            self.itm=itm_prop["enable"]
+            self.itm_weight=itm_prop["task_weight"]
+            
+            print("ITM in task: {}".format(self.itm))
+            if self.itm:
+                print("ITM Task weight: {}".format(self.itm_weight))
+
 
     def __call__(self,
                 data: Dict[str, Any]) -> Dict[str, Any]:
         
         assert self.STYLE_KEY in data
-        return super().__call__(data)
+        # since data_collate fn needs changing, all output need to be tuple
+        sample=super().__call__(data)
+
+        # inference mode does not require 'sample' to be tuple
+        if self.mode!=ModeKeys.INFERENCE and not isinstance(sample, tuple):
+            sample=(sample, )
+        return sample
     
     def add_style_token(self, style_dict: Dict[str, str]):
         self.style_dict = style_dict
@@ -110,6 +158,81 @@ class OfaStylishICPreprocessor(OfaICP):
         self.tokenizer.add_tokens(list(self.style_dict.values()))
         # open the token mode
         self.tokenize_style = isinstance(self.style_dict, dict)
+
+    def _build_train_sample(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        # caption task
+        sample_caption=super()._build_train_sample(data)
+        # add weight
+        sample_caption["conf"]=tensor([1.0])
+
+        # randomly selects another style
+        pos_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict))) if self.tokenize_style \
+                  else data[self.STYLE_KEY]
+        while True:
+            # tokenize the style for comparison
+            if not self.tokenize_style:
+                orig_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict)))
+            else:
+                orig_style=pos_style
+            other_style=random.randint(0,len(self.style_dict)-1)
+            if self.style_token.format(other_style)!=orig_style:
+                break
+        
+        # if we choose not to tokenize style, we need to check the item style
+        if self.tokenize_style:
+            other_style=self.style_token.format(other_style)
+        else:
+            other_style=list(self.style_dict.keys())[other_style]
+        
+        # if scst is adopted, then we should quit asap
+        if not self.itm:
+            sample=(sample_caption, )
+            return sample
+        
+        # itm sample
+        # replies
+        itm_reply=[" yes", " no", " personality"]
+        itm_caption_src=sample_caption["label"]
+        itm_style=pos_style
+
+        roulette=random.random()
+        if roulette<=0.5:
+            # keep everything as is
+            itm_target=self.tokenize_text(itm_reply[0], add_bos=False)
+        elif 0.5<roulette<=0.75:
+            # mess up the caption
+            # TODO: random select negative captions
+            itm_caption_src=random.choice(data["negative_caps"])
+            # also change the index below
+            itm_target=self.tokenize_text(itm_reply[1], add_bos=False)
+        else:
+            # mess up the style
+            itm_style=other_style
+            itm_target=self.tokenize_text(itm_reply[2], add_bos=False)
+
+        itm_prev=cat([self.bos_item, itm_target[:-1]])
+        # strip the caption
+        itm_caption = itm_caption_src.translate(self.transtab).strip()
+        cap_token_list = itm_caption.strip().split()
+        itm_caption = ' '.join(cap_token_list[:self.max_tgt_length-10])
+        # prompt
+        itm_prompt=self.tokenize_text(' does the image describe " {} " in personality {}?'.format(itm_caption, itm_style))
+        
+        sample_itm={
+            "patch_image": sample_caption["patch_image"],
+            "patch_mask": sample_caption["patch_mask"],
+            "conf": tensor([self.itm_weight]),
+            "source": itm_prompt,
+            "target": itm_target,
+            "prev_output_tokens": itm_prev,
+            "label": None
+            # target :" yes/no/personality</s>"
+            # prev_output_tokens
+        }
+        # output sample
+        sample=(sample_caption, sample_itm)
+
+        return sample
 
     def _build_infer_sample(
                 self, 
@@ -124,17 +247,18 @@ class OfaStylishICPreprocessor(OfaICP):
 
         sample: Dict[str, Any]=super()._build_infer_sample(data)
         # define the new prompt
-        new_prompt=self.cfg.model.get("prompt", " what does the image describe? write a {} reply.")
+        new_prompt=self.cfg.model.get("prompt", " what does the image describe? reply in personality {}.")
         # get current style
         # for unknown style, we use <code_i+1> instead of <unk>
-        cur_style=self.style_dict.get(data[self.STYLE_KEY], "<code_{}>".format(len(self.style_dict))) if self.tokenize_style \
+        cur_style=self.style_dict.get(data[self.STYLE_KEY], self.style_token.format(len(self.style_dict))) if self.tokenize_style \
                   else data[self.STYLE_KEY]
         # 教训惨痛, 遂决定添加warning
-        if cur_style=="<code_{}>".format(len(self.style_dict)):
+        if cur_style==self.style_token.format(len(self.style_dict)):
             print("WARNING: Got unknown style token, check orig: {}".format(data[self.STYLE_KEY]))
         inputs=new_prompt.format(cur_style)
         # update the dict with our new prompt
         sample["source"]=self.tokenize_text(inputs)
+
         return sample
     
 

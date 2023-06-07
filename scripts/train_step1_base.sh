@@ -21,11 +21,24 @@ fi
 MODEL_OP=$CODE_DIR/model_operator.py
 DISP_PARAM=${DISP_PARAM:-true}
 
+# itm task marker
+ITM_TASK=${ITM_TASK:-false}
+ITM_WEIGHT=${ITM_WEIGHT:-1.0}
+
 CONF=${CONF:-$CODE_DIR/conf/debug/debug_xe.json}
 WORK_DIR=$(jq ."work_dir" $CONF | sed -e "s#.*/.*#\0#g" -e "s#\.#$CODE_DIR#g" -e "s#\"##g")
 # exit if conf is not correctly read
 if [ $? != 0 ];then exit $?;fi
 WORK_DIR=${WORK_DIR:0:-1}
+
+# add itm suffix
+if $ITM_TASK
+then 
+    # don't add '_itm' when exec from mul.sh
+    if [ ! ${TAR_PREFIX:0-4:4} == "_itm" ]
+    then TAR_PREFIX="${TAR_PREFIX}_itm"
+    fi
+fi
 
 CSV_FILENAME=${CSV_FILENAME:-"$CURRENT_DIR/metrics_params/${TAR_PREFIX}_step1.csv"}
 DOC_FILEDIR=${DOC_FILEDIR:-$CURRENT_DIR/.max_cider_$TAR_PREFIX}
@@ -52,7 +65,14 @@ then
     for x in $lr $lr_end $warm_up $weight_decay $batch_size;
     do echo $x;
     done
+    # ITM Indicator
+    printf "ITM Task Enabled: %s\n" $ITM_TASK
+    if $ITM_TASK
+    then printf "ITM Task weight: %.1f\n" $ITM_WEIGHT
+    fi
 fi
+
+
 # train
 echo $CUDA_GPUS
 base_command="torchrun --rdzv_backend c10d \
@@ -66,6 +86,15 @@ base_command="torchrun --rdzv_backend c10d \
         --max_epoches $epoch \
         --batch_size $batch_size \
         --num_workers $workers"
+
+if $ITM_TASK
+then
+    # insert itm related command
+    base_command="$base_command \
+                --itm \
+                --itm_alpha $ITM_WEIGHT"
+    
+fi
 
 CUDA_VISIBLE_DEVICES=$CUDA_GPUS $base_command --checkpoint $ckpt
 
