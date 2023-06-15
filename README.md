@@ -7,6 +7,7 @@
 - 2023-03-26: 添加环境配置章节
 - 2023-03-27: inference支持指定推理样本, 添加json文件样例
 - 2023-05-06: 实验性地向模型添加ITM任务, 以期进一步boost性能
+- 2023-06-15: 支持基于gradio的网页推理, 支持上传自己的文件
 
 ## Env setup
 这里推荐使用conda
@@ -151,6 +152,19 @@ python3 -m utils.backup_model --conf path_to_conf
 | -n/--no_json                 | 若使用该参数, 则打包时会忽略配置json文件      | False            |
 
 > 注意: -e/-n只能二择其一
+
+## Gradio inference
+
+shell在代码根目录下输入: 
+```sh
+CUDA_VISIBLE_DEVICES=x python web_inference.py --conf path_to_conf
+```
+以下是web_inference.py的arg
+| args                         | help                       | default    |
+|------------------------------|----------------------------|:----------:|
+| -c/--conf path/to/train_conf | 指定train configuration json | *required* |
+| -p/--port port               | 指定以哪个端口访问                  | 8080       |
+
 
 
 ## Credits
