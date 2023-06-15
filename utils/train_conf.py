@@ -85,10 +85,10 @@ def save_style_dict_to_json(style_dict: dict,
 def cfg_modify_fn(args):
     # load arguments from args
     max_epoches:int=getattr(args, "max_epoches", 3)
-    num_workers:int=getattr(args,"num_workers",0)
-    batch_size:int=args.batch_size
-    patch_img_size:int=args.patch_image_size
+    num_workers:int=getattr(args,"num_workers", 0)
+    batch_size:int=getattr(args,"batch_size", 2)
     max_img_size:int=args.max_image_size
+    patch_img_size:int=getattr(args, "patch_image_size", max_img_size)
     # hyper-parameters
     lr=getattr(args,"lr",None)
     lr_end=getattr(args,"lr_end",None)
