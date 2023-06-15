@@ -1,6 +1,5 @@
 import os
 import json
-from tkinter import N
 
 def load_train_conf(train_conf_filename: str):
     '''
