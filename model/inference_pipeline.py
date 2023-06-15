@@ -76,19 +76,6 @@ def start_inference_from_eval(train_conf: dict,
     # define preprocessor and model
     stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
 
-
-def start_inference_from_eval(train_conf: dict,
-                   data: List[Dict[str,str]],
-                   mod_fn: Callable):
-    '''
-    data: ["style", "image", "text"]
-    '''
-    # save ground truth and pop it for the pipeline
-    orig_text=list(map(lambda x:{"reference":x.pop("text")},data))
-
-    # define preprocessor and model
-    stylish_ic=generate_infr_pipeline(train_conf, mod_fn)
-
     result=[]
     result_cap=list(map(lambda x:x.get(OutputKeys.CAPTION), stylish_ic(data)))
     for i in range(len(result_cap)):
